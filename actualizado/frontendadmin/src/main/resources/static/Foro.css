@@ -1,0 +1,321 @@
+/* Estilos base del body y fondo */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Limelight", "Literata", sans-serif;
+  background-color: #34495e;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: #34495e;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #2ecc71 50%, transparent 100%),
+    radial-gradient(2px 2px at 40px 70px, #3498db 50%, transparent 100%),
+    radial-gradient(2px 2px at 50px 160px, #2ecc71 50%, transparent 100%),
+    radial-gradient(2px 2px at 90px 40px, #3498db 50%, transparent 100%),
+    radial-gradient(2px 2px at 130px 80px, #2ecc71 50%, transparent 100%),
+    radial-gradient(2px 2px at 160px 120px, #3498db 50%, transparent 100%);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.3;
+  animation: moveStars 20s linear infinite;
+}
+
+/* Header y logo */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px;
+  gap: 20px;
+  background-color: transparent;
+  margin-bottom: 20px; /* Reducir el espacio después del header */
+}
+
+.logo img {
+  width: 300px;
+  max-height: 350px;
+  filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.3))
+         drop-shadow(0 0 20px rgba(52, 152, 219, 0.3));
+  transition: all 0.3s ease;
+  object-fit: contain;
+}
+
+.logo img:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 15px rgba(46, 204, 113, 0.5))
+         drop-shadow(0 0 30px rgba(52, 152, 219, 0.5));
+}
+
+/* Navbar actualizado */
+.main-nav {
+  background-color: transparent;
+  box-shadow: none;
+  width: auto;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  margin-bottom: 20px; /* Reducir el espacio después del navbar */
+}
+
+.menu-horizontal {
+  list-style: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0;
+  margin: 0;
+  gap: 15px;
+}
+
+.menu-horizontal > li > a {
+  text-decoration: none;
+  color: #000000e6;
+  font-size: 22px;
+  font-weight: bold;
+  font-family: "Literata", serif;
+  padding: 12px 25px;
+  display: block;
+  border: none;
+  transition: all 0.3s ease;
+  border-radius: 15px;
+  white-space: nowrap;
+}
+
+.menu-horizontal > li > a:hover {
+  background-color: #03b7bce6;
+  color: white;
+  transform: scale(1.05);
+}
+
+.menu-horizontal > li > a > i {
+  margin-right: 10px;
+  color: black;
+}
+
+/* Contenedor principal del foro */
+.contenedor-principal {
+  max-width: 700px;
+  margin: 0 auto; /* Eliminado el margen superior */
+  padding: 20px;
+}
+
+/* Ajuste del título */
+.titulo-foro {
+  font-family: "Rubik", sans-serif;
+  font-size: 24px;
+  color: #2ECC71;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Área para crear nuevos comentarios */
+.foroEditable {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border-radius: 15px;
+  padding: 1.5rem; /* Reducido de 2rem */
+  margin-top: 0; /* Eliminar margen superior */
+  margin-bottom: 20px; /* Reducir espacio entre contenedores */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+/* Textarea */
+#nuevoComentario {
+  width: calc(100% - 2rem); /* Ajustado para considerar el padding */
+  min-height: 80px; /* Reducido de 100px */
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #2ECC71;
+  border-radius: 12px;
+  color: #FFFFFF;
+  padding: 1rem;
+  font-family: "Literata", serif;
+  font-size: 16px;
+  margin: 1rem 0;
+  resize: vertical;
+}
+
+/* Información del usuario */
+.usuarioInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.foto img,
+.usuario-avatar {
+  width: 20px; /* Reducido de 40px */
+  height: 20px; /* Reducido de 40px */
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #2ECC71;
+}
+
+.usuario-avatar-pequeño {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #2ECC71;
+}
+
+/* Ajuste del nombre de usuario */
+.nombreUsuario,
+.usuario-nombre {
+  font-family: "Rubik", sans-serif;
+  font-size: 16px;
+  color: #FFFFFF;
+}
+
+/* Área de comentarios */
+.comentarios-container {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border-radius: 15px;
+  padding: 1.5rem; /* Reducido de 2rem */
+  margin-top: 0; /* Eliminar margen superior */
+  margin-bottom: 20px; /* Reducir espacio entre contenedores */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Comentario individual */
+.comentario-container {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #2ECC71;
+  border-radius: 12px;
+  padding: 1.2rem; /* Reducido de 1.5rem */
+  margin-bottom: 1.2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.comentario-container:hover {
+  transform: scale(1.01);
+  border-color: #3498DB;
+}
+
+/* Contenido del comentario */
+.comentario-contenido {
+  color: #FFFFFF;
+  line-height: 1.6;
+  font-size: 16px;
+  margin: 1rem 0;
+}
+
+/* Botones de acción */
+.btn-publicar,
+.btn-responder,
+.btn-enviar {
+  background: #2ECC71;
+  color: #FFFFFF;
+  padding: 10px 20px;
+  border-radius: 15px;
+  border: none;
+  font-family: "Literata", serif;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-publicar:hover,
+.btn-responder:hover,
+.btn-enviar:hover {
+  background: #3498DB;
+  transform: scale(1.05);
+}
+
+/* Área de respuestas */
+.respuestas-wrapper {
+  margin-top: 1rem;
+  padding-left: 2rem;
+  border-left: 2px solid rgba(46, 204, 113, 0.3);
+}
+
+.respuesta {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+@keyframes moveStars {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-200px);
+  }
+}
+
+/* Media queries */
+@media screen and (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+  }
+
+  .logo img {
+    width: 200px;
+    max-height: 250px;
+  }
+
+  .main-nav {
+    position: static;
+    width: 100%;
+    margin: 10px 0;
+  }
+
+  .menu-horizontal {
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .menu-horizontal > li > a {
+    font-size: 18px;
+    padding: 10px 15px;
+  }
+
+  .contenedor-principal {
+    margin-top: 0;
+    padding: 10px;
+  }
+
+  .foto img,
+  .usuario-avatar {
+    width: 30px; /* Aún más pequeño en móviles */
+    height: 30px;
+  }
+
+  .foroEditable,
+  .comentarios-container {
+    padding: 1rem;
+  }
+
+  .comentario-container {
+    padding: 1rem;
+  }
+
+  .respuestas-wrapper {
+    padding-left: 1rem;
+  }
+}

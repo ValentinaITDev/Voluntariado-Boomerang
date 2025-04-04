@@ -1,0 +1,509 @@
+/* Estilo del body y fondo */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Limelight", "Literata", sans-serif;
+  background-color: #34495E;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: #34495E;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #2ECC71 50%, transparent 100%),
+    radial-gradient(2px 2px at 40px 70px, #3498DB 50%, transparent 100%),
+    radial-gradient(2px 2px at 50px 160px, #2ECC71 50%, transparent 100%),
+    radial-gradient(2px 2px at 90px 40px, #3498DB 50%, transparent 100%),
+    radial-gradient(2px 2px at 130px 80px, #2ECC71 50%, transparent 100%),
+    radial-gradient(2px 2px at 160px 120px, #3498DB 50%, transparent 100%);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.3;
+  animation: moveStars 20s linear infinite;
+}
+
+/* Header y logo */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Cambiado de space-between a flex-start */
+  padding: 5px;
+  gap: 20px;
+}
+
+/* Actualizar el estilo del logo */
+.logo img {
+  width: 300px;
+  max-height: 350px;
+  filter: drop-shadow(0 0 10px rgba(3, 183, 188, 0.3))
+         drop-shadow(0 0 20px rgba(203, 115, 250, 0.3));
+  transition: all 0.3s ease;
+  object-fit: contain;
+}
+
+.logo img:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 15px rgba(3, 183, 188, 0.5))
+         drop-shadow(0 0 30px rgba(203, 115, 250, 0.5));
+}
+
+/* Navbar */
+.navbar {
+  background-color: transparent;
+  box-shadow: none;
+  padding: 5px 0;
+  margin-left: auto;  /* Mueve el navbar a la derecha */
+  position: absolute;  /* Lo posiciona absolutamente */
+  top: 20px;          /* Ajusta la distancia desde arriba */
+  right: 20px;        /* Ajusta la distancia desde la derecha */
+}
+
+.navbar ul {
+  list-style: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0;
+  margin: 0;
+  gap: 10px;
+}
+
+.navbar ul li {
+  margin: 0;
+}
+
+.navbar ul li a {
+  text-decoration: none;
+  color: #FFFFFF;
+  font-size: 24px;
+  font-weight: bold;
+  font-family: "Literata", serif;
+  padding: 12px 25px;
+  display: block;
+  border: none;
+  transition: all 0.3s ease;
+  border-radius: 15px;
+}
+
+.navbar ul li a i {
+  margin-right: 10px;
+}
+
+.navbar ul li a:hover {
+  background-color: #2ECC71;
+  color: #FFFFFF;
+}
+
+/* Contenedor principal del login */
+.login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Contenedor del formulario */
+.logincontenido {
+  backdrop-filter: blur(5px);
+  padding: 40px;
+  border-radius: 15px;
+  width: 400px;
+  text-align: center;
+  background-color: rgba(52, 152, 219, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: "Literata", serif;
+  color: #FFFFFF;
+  margin: 0 auto;
+}
+
+/* Imagen de usuario */
+.imagen-predeterminada {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 30px;
+  background: transparent; /* Eliminar el fondo */
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.3)); /* Sombra suave */
+  object-fit: contain; /* Mantener proporciones */
+  padding: 0; /* Eliminar padding */
+}
+
+/* Título del formulario */
+.logincontenido h2 {
+  font-size: 28px;
+  margin-bottom: 30px;
+  color: #2ECC71;
+  text-shadow: none;
+}
+
+/* Contenedor de los inputs */
+.input-group {
+  position: relative;
+  width: 90%;
+  margin-bottom: 25px;
+  margin: 0 auto 25px auto; /* Centrado horizontal */
+}
+
+/* Estilo de los inputs */
+.input-group input {
+  width: calc(100% - 60px); /* Ajustado para considerar el padding y el icono */
+  padding: 15px 15px 15px 45px;
+  background: rgba(52, 152, 219, 0.1);
+  border: 2px solid #2ECC71;
+  border-radius: 15px;
+  color: #FFFFFF;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  margin: 0 auto; /* Centrado horizontal */
+}
+
+.input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Iconos en los inputs */
+.input-group i {
+  position: absolute;
+  left: 20px; /* Ajustado para alinearse con el input centrado */
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2ECC71;
+  font-size: 20px;
+  opacity: 0.8;
+}
+
+/* Actualizar el estilo del botón */
+.Formulario button {
+  display: inline-block;
+  background: #2ECC71;
+  padding: 15px 50px;
+  border-radius: 25px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+  transition: all 0.3s ease;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-family: "Mitr", serif;
+  font-weight: bold;
+  font-size: 22px;
+  border: none;
+  width: auto;
+  margin: 20px auto;
+}
+
+.Formulario button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+}
+
+/* Contenedor para "Recordarme" y "¿Olvidaste tu contraseña?" */
+.remember-forgot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 90%;
+  margin: 20px auto;
+}
+
+/* Estilo para el checkbox y su etiqueta */
+.remember-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white; /* Cambiado para mejor contraste */
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.remember-label input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Estilo para el enlace de contraseña olvidada */
+.forgot-link {
+  color: #2ECC71;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.forgot-link:hover {
+  color: #3498DB;
+}
+
+/* Estilo para el enlace de crear cuenta */
+.Crearcuenta {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  width: 90%;
+}
+
+.Crearcuenta a {
+  color: #2ECC71;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.Crearcuenta a:hover {
+  color: #3498DB;
+}
+
+/* Animación de estrellas */
+@keyframes moveStars {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-200px);
+  }
+}
+
+/* Media queries */
+@media screen and (max-width: 768px) {
+  body {
+    background-color: #34495E;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: center;
+    padding: 10%;
+  }
+
+  .logo img {
+    width: 100px;
+    max-height: 150px;
+  }
+
+  .navbar {
+    position: static;  /* Vuelve a posición normal en móviles */
+    width: 100%;
+    margin: 10px 0;
+  }
+
+  .navbar ul {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .navbar ul li a {
+    font-size: 18px;
+    padding: 10px 20px;
+    color: #FFFFFF;
+  }
+
+  .login {
+    padding: 40px 15px;
+    min-height: calc(100vh -180px);
+  }
+
+  .logincontenido {
+    width: 90%;
+    max-width: 350px;
+    padding: 30px 20px;
+  }
+
+  .imagen-predeterminada {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+  }
+
+  .logincontenido h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .Formulario input {
+    padding: 10px;
+  }
+
+  .Formulario button {
+    font-size: 18px;
+    padding: 12px 30px;
+  }
+
+  .input-group {
+    width: 95%;
+    margin-bottom: 15px;
+  }
+
+  .input-group input {
+    width: calc(100% - 50px);
+    padding: 12px 12px 12px 40px;
+    font-size: 14px;
+  }
+
+  .input-group i {
+    left: 15px;
+    font-size: 18px;
+  }
+
+  .remember-label,
+  .forgot-link,
+  .Crearcuenta a {
+    font-size: 13px;
+  }
+
+  .remember-forgot {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+}
+
+#formRecuperacion {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+#formRecuperacion .avatar-container i {
+  font-size: 40px;
+}
+
+#formRecuperacion h2 {
+  color: white;
+  text-align: center;
+  font-size: 1.6em;
+  margin-bottom: 20px;
+}
+
+#formRecuperacion button {
+  background: linear-gradient(45deg, #c76dd7, #03b7bc);
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+#formRecuperacion button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.mensaje {
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 15px;
+  font-size: 0.9em;
+}
+
+.mensaje.exito {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.mensaje.error {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loader {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #c76dd7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px auto;
+}
+
+.loader-text {
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.user-recognition {
+  text-align: center;
+  margin: 15px 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.profile-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-recognition-text {
+  color: white;
+  font-size: 14px;
+  margin: 5px 0;
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Impulsa el cambio - Voluntario</title>
+    <link rel="stylesheet" type="text/css" href="/inicioVoluntario.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Limelight&family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&family=Luckiest+Guy&family=Lusitana:wght@400;700&family=Mitr:wght@200;300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo">
+        <img src="/Imagenes/Logo.png" alt="Logo" class="Logo" />
+      </div>
+    </header>
+
+    <nav class="main-nav">
+      <ul class="menu-horizontal" id="mainMenu">
+        <li>
+          <a href="/inicioVoluntario">
+            <i class="fas fa-home" style="color: #1c5b99"></i> Inicio
+          </a>
+        </li>
+        <li>
+          <a href="/foro">
+            <i class="fas fa-comments" style="color: #1c5b99"></i> Foro
+          </a>
+        </li>
+        <li>
+          <a href="/proyectos">
+            <i class="fas fa-project-diagram" style="color: #1c5b99"></i>
+            Proyectos
+          </a>
+        </li>
+        <li>
+          <a href="/DesafioVoluntario">
+            <i class="fas fa-trophy" style="color: #1c5b99"></i> Desafíos
+          </a>
+        </li>
+        <li>
+          <a href="/Perfil">
+            <i class="fas fa-id-card" style="color: #1c5b99"></i> Perfil
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <section class="inicio-usuario">
+      <h2>Bienvenido, <span th:text="${usuario.nombre}">Usuario</span></h2>
+
+      <!-- Sección de Desafíos -->
+      <div class="seccion-desafios">
+        <h3><i class="fas fa-trophy"></i> Desafíos Activos</h3>
+        <div class="tarjetas-grid">
+          <div
+            th:if="${not #lists.isEmpty(desafiosActivos)}"
+            class="tarjetas-container"
+          >
+            <a
+              th:each="desafio : ${desafiosActivos}"
+              href="/DesafioVoluntario"
+              class="tarjeta-desafio"
+            >
+              <div class="desafio-header">
+                <h4 th:text="${desafio.tipoDesafio.descripcion}">
+                  Tipo de Desafío
+                </h4>
+                <span
+                  class="puntos-recompensa"
+                  th:text="${'🏆 ' + desafio.puntosRecompensa + ' pts'}"
+                  >100 pts</span
+                >
+              </div>
+              <div class="desafio-footer">
+                <span
+                  class="fecha-limite"
+                  th:text="${'⏰ Fecha límite: ' + #temporals.format(desafio.fechaFin, 'dd/MM/yyyy')}"
+                >
+                  Fecha límite
+                </span>
+                <span
+                  class="estado-participando"
+                  th:if="${desafio.participantes.contains(usuario) and !desafio.usuariosCompletados.contains(usuario)}"
+                >
+                  🎯 En progreso
+                </span>
+                <span
+                  class="estado-completado"
+                  th:if="${desafio.usuariosCompletados.contains(usuario)}"
+                >
+                  ✅ Completado
+                </span>
+              </div>
+            </a>
+          </div>
+          <div th:if="${#lists.isEmpty(desafiosActivos)}" class="estado-vacio">
+            <p>No hay desafíos activos en este momento.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección de Proyectos -->
+      <div class="seccion-proyectos">
+        <h3><i class="fas fa-project-diagram"></i> Proyectos Activos</h3>
+        <div class="tarjetas-grid">
+          <div
+            th:if="${not #lists.isEmpty(proyectosActivos)}"
+            class="tarjetas-container"
+          >
+            <a
+              th:each="proyecto : ${proyectosActivos}"
+              href="/proyectos"
+              class="tarjeta-proyecto"
+            >
+              <div class="proyecto-header">
+                <h4 th:text="${proyecto.nombre}">Nombre del Proyecto</h4>
+              </div>
+              <p class="proyecto-descripcion" th:text="${proyecto.descripcion}">
+                Descripción del Proyecto
+              </p>
+              <div class="proyecto-footer">
+                <span
+                  class="participantes"
+                  th:text="${'👥 Participantes: ' + proyecto.participantes.size()}"
+                >
+                  Participantes
+                </span>
+                <span
+                  class="fecha-creacion"
+                  th:if="${proyecto.fechaCreacion != null}"
+                  th:text="${'📅 Creado: ' + #temporals.format(proyecto.fechaCreacion, 'dd/MM/yyyy')}"
+                >
+                  Fecha de creación
+                </span>
+              </div>
+            </a>
+          </div>
+          <div th:if="${#lists.isEmpty(proyectosActivos)}" class="estado-vacio">
+            <p>No hay proyectos activos en este momento.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script>
+      function participarEnDesafio(desafioId) {
+        fetch("/participarDesafio", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ desafioId: desafioId }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              location.reload();
+            } else {
+              alert(data.message || "Error al participar en el desafío");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error al participar en el desafío");
+          });
+      }
+    </script>
+  </body>
+</html>
