@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - VolunteerHub</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">VolunteerHub</div>
+        <ul class="nav-links">
+            <li><a href="/dashboard" class="active">Dashboard</a></li>
+            <li><a href="/mis-proyectos">Mis Proyectos</a></li>
+            <li><a href="/mis-desafios">Mis Desafíos</a></li>
+            <li><a href="/perfil">Perfil</a></li>
+            <li><a href="/logout">Cerrar Sesión</a></li>
+        </ul>
+    </nav>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="welcome-section">
+                <div class="user-info">
+                    <h1 th:text="'¡Bienvenido, ' + ${nombre} + '!'">¡Bienvenido, Voluntario!</h1>
+                    <p>Continúa haciendo la diferencia</p>
+                </div>
+                <div class="user-stats">
+                    <div class="stat-box">
+                        <h3 th:text="${proyectosActivos}">12</h3>
+                        <p>Proyectos Activos</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3 th:text="${puntosTotal}">48</h3>
+                        <p>Puntos Obtenidos</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3 th:text="${insigniasTotal}">5</h3>
+                        <p>Insignias</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <h2>Proyectos Actuales</h2>
+            
+            <!-- Mensaje si no hay proyectos -->
+            <div th:if="${proyectosActuales.empty}" class="no-projects-message">
+                <p>No tienes proyectos activos actualmente. ¡Únete a un proyecto para comenzar!</p>
+                <a href="/proyectos" class="btn-primary">Explorar Proyectos</a>
+            </div>
+            
+            <!-- Listado de proyectos dinámico -->
+            <div class="projects-grid" th:unless="${proyectosActuales.empty}">
+                <!-- Iteración sobre los proyectos del usuario -->
+                <div class="project-card" th:each="proyecto : ${proyectosActuales}">
+                    <div class="project-image">
+                        <svg viewBox="0 0 200 200">
+                            <path fill="currentColor" d="M 0,100 C 0,30 30,0 100,0 S 200,30 200,100 170,200 100,200 0,170 0,100" />
+                        </svg>
+                        <span class="project-status">En Progreso</span>
+                    </div>
+                    <div class="project-content">
+                        <h3 th:text="${proyecto.nombre}">Nombre del Proyecto</h3>
+                        <p>Proyecto activo desde <span th:text="${#temporals.format(proyecto.fechaUnion, 'dd/MM/yyyy')}">01/01/2023</span></p>
+                        <div class="progress-bar">
+                            <!-- Cálculo dinámico del progreso basado en contribuciones -->
+                            <div class="progress-fill" th:style="'width: ' + ((${proyecto.contribuciones.size()} * 10 > 100 ? 100 : ${proyecto.contribuciones.size()} * 10)) + '%'"></div>
+                        </div>
+                        <div class="project-meta">
+                            <span><i class="fas fa-user-circle"></i> <span th:text="${proyecto.rol}">Rol</span></span>
+                            <span><i class="fas fa-tasks"></i> <span th:text="${proyecto.contribuciones.size()}">0</span> contribuciones</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ejemplo estático (se puede eliminar) -->
+                <div class="project-card" th:if="${proyectosActuales.size() < 3}">
+                    <div class="project-image">
+                        <svg viewBox="0 0 200 200">
+                            <path fill="currentColor" d="M 0,100 C 0,30 30,0 100,0 S 200,30 200,100 170,200 100,200 0,170 0,100" />
+                        </svg>
+                        <span class="project-status">Nuevo</span>
+                    </div>
+                    <div class="project-content">
+                        <h3>Únete a más proyectos</h3>
+                        <p>¡Explora más oportunidades de voluntariado!</p>
+                        <div class="project-meta">
+                            <a href="/proyectos" class="btn-secondary">Ver proyectos disponibles</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de desafíos recientes -->
+            <h2 class="mt-4">Desafíos Recientes</h2>
+            <div class="challenges-section" th:if="${!usuario.desafios.empty}">
+                <div class="challenge-list">
+                    <div class="challenge-item" th:each="desafio : ${usuario.desafios}" th:if="${desafio.progreso > 0}">
+                        <div class="challenge-info">
+                            <h3 th:text="${desafio.nombre}">Nombre del Desafío</h3>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" th:style="'width: ' + ${desafio.progreso} + '%'"></div>
+                                </div>
+                                <span class="progress-text" th:text="${desafio.progreso} + '%'">0%</span>
+                            </div>
+                        </div>
+                        <div class="challenge-status" th:if="${desafio.completado}">
+                            <span class="badge-completed"><i class="fas fa-check-circle"></i> Completado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="no-challenges-message" th:if="${usuario.desafios.empty}">
+                <p>No tienes desafíos activos. ¡Comienza uno ahora!</p>
+                <a href="/desafios" class="btn-primary">Ver Desafíos</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Animación de las barras de progreso al cargar la página
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.progress-fill').forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 300);
+            });
+        });
+    </script>
+</body>
+</html>

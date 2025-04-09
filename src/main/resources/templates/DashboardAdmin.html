@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - VolunteerHub</title>
+    <link rel="stylesheet" href="/Styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">VolunteerHub Admin</div>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Dashboard</a></li>
+            <li><a href="#">Usuarios</a></li>
+            <li><a href="/ProyectosAdmin">Proyectos</a></li>
+            <li><a href="#">Reportes</a></li>
+            <li><a href="#">Configuración</a></li>
+            <li><a href="/logout">Cerrar Sesión</a></li>
+        </ul>
+    </nav>
+
+    <div class="admin-dashboard">
+        <header class="admin-header">
+            <div class="greeting-section">
+                <h1>Panel de Administración</h1>
+                <p>Bienvenido de nuevo, Administrador</p>
+            </div>
+            <div class="date-time">
+                <div id="current-time">10:30 AM</div>
+                <div id="current-date">15 de Mayo, 2024</div>
+            </div>
+        </header>
+
+        <div class="stats-container">
+            <div class="stat-card" data-value="1234">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Usuarios Totales</h3>
+                    <div class="stat-number">0</div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>12% este mes</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card" data-value="856">
+                <div class="stat-icon">
+                    <i class="fas fa-hands-helping"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Proyectos Activos</h3>
+                    <div class="stat-number">0</div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>8% este mes</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card" data-value="2547">
+                <div class="stat-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Interacciones en Foros</h3>
+                    <div class="stat-number">0</div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>15% este mes</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card" data-value="98">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Satisfacción</h3>
+                    <div class="stat-number">0%</div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>2% este mes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="projects-overview">
+            <h2>Proyectos Destacados</h2>
+            <div class="projects-grid">
+                <div class="admin-project-card">
+                    <div class="project-header">
+                        <h3>Limpieza de Playas</h3>
+                        <span class="status high-priority">Alta Prioridad</span>
+                    </div>
+                    <div class="project-stats">
+                        <div class="stat">
+                            <i class="fas fa-user-check"></i>
+                            <span>45 Voluntarios</span>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-clock"></i>
+                            <span>3 días restantes</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span>Progreso</span>
+                            <span>75%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 75%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-project-card">
+                    <div class="project-header">
+                        <h3>Reforestación Urbana</h3>
+                        <span class="status medium-priority">Media Prioridad</span>
+                    </div>
+                    <div class="project-stats">
+                        <div class="stat">
+                            <i class="fas fa-user-check"></i>
+                            <span>32 Voluntarios</span>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-clock"></i>
+                            <span>7 días restantes</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span>Progreso</span>
+                            <span>45%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 45%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Animación de números en las estadísticas
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                let value = Math.floor(progress * (end - start) + start);
+                if (obj.classList.contains('stat-number')) {
+                    obj.innerHTML = end === 98 ? value + '%' : value.toLocaleString();
+                }
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Iniciar animaciones cuando la página carga
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.stat-card').forEach(card => {
+                const numberElement = card.querySelector('.stat-number');
+                const targetValue = parseInt(card.dataset.value);
+                animateValue(numberElement, 0, targetValue, 2000);
+            });
+
+            // Actualizar fecha y hora
+            function updateDateTime() {
+                const now = new Date();
+                document.getElementById('current-time').textContent = now.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                document.getElementById('current-date').textContent = now.toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        });
+    </script>
+</body>
+</html>

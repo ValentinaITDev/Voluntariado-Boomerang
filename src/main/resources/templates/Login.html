@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - VolunteerHub</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">VolunteerHub</div>
+        <ul class="nav-links">
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/login" class="active">Iniciar Sesión</a></li>
+            <li><a href="/registro">Registro</a></li>
+        </ul>
+    </nav>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="card-flip">
+                <div class="card-front">
+                    <h2><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</h2>
+                    
+                    <!-- Mensajes para el usuario -->
+                    <div class="alert alert-danger" th:if="${param.error}">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span th:text="${errorMsg != null ? errorMsg : 'Usuario o contraseña incorrectos'}">Credenciales inválidas</span>
+                    </div>
+                    
+                    <div class="alert alert-success" th:if="${param.logout}">
+                        <i class="fas fa-check-circle"></i>
+                        <span th:text="${logoutMsg != null ? logoutMsg : 'Has cerrado sesión correctamente'}">Sesión cerrada</span>
+                    </div>
+                    
+                    <div class="alert alert-success" th:if="${param.registroExitoso}">
+                        <i class="fas fa-check-circle"></i>
+                        <span th:text="${registroExitosoMsg != null ? registroExitosoMsg : '¡Registro exitoso! Ya puedes iniciar sesión'}">Registro exitoso</span>
+                    </div>
+                    
+                    <form id="loginForm" class="login-form" th:action="@{/proceso-login}" method="post">
+                        <div class="form-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" name="username" placeholder="Correo electrónico" required>
+                            <span class="focus-border"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" name="password" placeholder="Contraseña" required>
+                            <span class="focus-border"></span>
+                            <i class="fas fa-eye toggle-password"></i>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="remember-me">
+                                <input type="checkbox" name="remember-me">
+                                <span class="checkmark"></span>
+                                Recordarme
+                            </label>
+                            <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                        </div>
+
+                        <button type="submit" class="submit-btn login-btn">
+                            <span>Ingresar</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </form>
+                    <p class="register-link">¿No tienes cuenta? <a href="/registro">Regístrate aquí</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        document.querySelector('.toggle-password').addEventListener('click', function() {
+            const passwordInput = this.previousElementSibling.previousElementSibling;
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+
+        // Add floating label effect
+        document.querySelectorAll('.form-group input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('focused');
+            });
+            input.addEventListener('blur', () => {
+                if (!input.value) {
+                    input.parentElement.classList.remove('focused');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

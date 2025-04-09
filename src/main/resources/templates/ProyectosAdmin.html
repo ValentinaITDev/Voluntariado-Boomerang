@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Proyectos - VolunteerHub Admin</title>
+    <link rel="stylesheet" href="/Styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">VolunteerHub Admin</div>
+        <ul class="nav-links">
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="#">Usuarios</a></li>
+            <li><a href="/ProyectosAdmin" class="active">Proyectos</a></li>
+            <li><a href="#">Reportes</a></li>
+            <li><a href="#">Configuración</a></li>
+            <li><a href="/logout">Cerrar Sesión</a></li>
+        </ul>
+    </nav>
+
+    <div class="projects-admin-container">
+        <!-- Botón para crear nuevo proyecto -->
+        <button class="add-project-btn" onclick="toggleForm()">
+            <i class="fas fa-plus"></i> Nuevo Proyecto
+        </button>
+
+        <!-- Formulario de búsqueda -->
+        <div class="search-container">
+            <form th:action="@{/proyectos/buscar}" method="get">
+                <input type="text" name="nombre" placeholder="Buscar proyectos..." required>
+                <button type="submit"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
+
+        <!-- Modal con el formulario para crear proyecto -->
+        <div class="project-form-modal" id="projectForm">
+            <div class="modal-content">
+                <h2><i class="fas fa-project-diagram"></i> Crear Nuevo Proyecto</h2>
+                <form id="newProjectForm" class="create-project-form" th:action="@{/proyectos/crear}" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label><i class="fas fa-heading"></i> Nombre del Proyecto</label>
+                        <input type="text" name="nombre" required placeholder="Ingrese el nombre del proyecto">
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-align-left"></i> Descripción</label>
+                        <textarea name="descripcion" required placeholder="Describa el proyecto"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-image"></i> Imagen del Proyecto</label>
+                        <div class="image-upload-container">
+                            <input type="file" id="imagenProyecto" name="imagenProyecto" accept="image/*">
+                            <label for="imagenProyecto" class="upload-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Arrastre la imagen aquí o haga clic para seleccionar</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn" onclick="toggleForm()">Cancelar</button>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-save"></i> Guardar Proyecto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de proyectos -->
+        <div class="projects-grid">
+            <!-- Iteramos sobre los proyectos existentes -->
+            <div class="project-admin-card" th:each="proyecto : ${proyectos}">
+                <div class="project-image">
+                    <div class="project-overlay"></div>
+                    <img th:if="${proyecto.imagenUrl != null}" th:src="${proyecto.imagenUrl}" alt="Imagen del proyecto">
+                    <svg th:if="${proyecto.imagenUrl == null}" viewBox="0 0 200 200">
+                        <path fill="currentColor" d="M 0,100 C 0,30 30,0 100,0 S 200,30 200,100 170,200 100,200 0,170 0,100" />
+                    </svg>
+                </div>
+                <div class="project-content">
+                    <h3 th:text="${proyecto.nombre}">Nombre del Proyecto</h3>
+                    <p th:text="${proyecto.descripcion}">Descripción del proyecto</p>
+                    
+                    <div class="project-meta">
+                        <span><i class="fas fa-users"></i> <span th:text="${proyecto.participantes.size()}">0</span> voluntarios</span>
+                        <span><i class="fas fa-calendar"></i> <span th:text="${proyecto.estado}">ACTIVO</span></span>
+                    </div>
+
+                    <div class="project-actions">
+                        <button class="action-btn" onclick="toggleActions(this)">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="actions-menu">
+                            <a th:href="@{/proyectos/{id}/editar(id=${proyecto.id})}" class="btn-action">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <button onclick="showParticipants(this.getAttribute('data-id'))" th:data-id="${proyecto.id}">
+                                <i class="fas fa-users"></i> Ver Participantes
+                            </button>
+                            <a th:href="@{/proyectos/{id}/eliminar(id=${proyecto.id})}" class="btn-action delete-btn" 
+                               onclick="return confirm('¿Está seguro de eliminar este proyecto?')">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensaje cuando no hay proyectos -->
+            <div th:if="${proyectos.empty}" class="no-projects-message">
+                <p>No hay proyectos disponibles. ¡Crea tu primer proyecto!</p>
+                <button class="btn-primary" onclick="toggleForm()">Crear Proyecto</button>
+            </div>
+        </div>
+
+        <!-- Modal de Participantes -->
+        <div id="participantsModal" class="participants-modal">
+            <div class="modal-content">
+                <h2><i class="fas fa-users"></i> Participantes del Proyecto</h2>
+                <div class="participants-grid" id="participantsContainer">
+                    <!-- Los participantes se cargarán dinámicamente aquí -->
+                </div>
+                <button class="close-modal" onclick="closeParticipantsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleForm() {
+            const form = document.getElementById('projectForm');
+            form.classList.toggle('show');
+        }
+
+        function toggleActions(btn) {
+            const menu = btn.nextElementSibling;
+            menu.classList.toggle('show');
+        }
+
+        function showParticipants(projectId) {
+            const modal = document.getElementById('participantsModal');
+            const container = document.getElementById('participantsContainer');
+            
+            // Aquí podrías cargar los participantes con AJAX
+            // Por ahora, mostraremos un mensaje simple
+            container.innerHTML = '<p>Cargando participantes del proyecto ' + projectId + '...</p>';
+            
+            modal.classList.add('show');
+        }
+
+        function closeParticipantsModal() {
+            const modal = document.getElementById('participantsModal');
+            modal.classList.remove('show');
+        }
+
+        // Cerrar menús cuando se hace clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.project-actions')) {
+                document.querySelectorAll('.actions-menu').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // Preview de imagen
+        document.getElementById('imagenProyecto').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const label = document.querySelector('.upload-label');
+                    label.style.backgroundImage = `url(${e.target.result})`;
+                    label.classList.add('has-image');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
