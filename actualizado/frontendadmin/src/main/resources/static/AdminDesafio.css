@@ -1,43 +1,334 @@
+/* Estilos base como AdminStyle */
 body {
-    background-size: 400% 400%;
-    animation: gradientAnimation 12s ease infinite;
-    font-family: 'Mitr', sans-serif;
     margin: 0;
+    padding: 0;
+    font-family: "Limelight", "Literata", sans-serif;
+    background-color: #34495e;
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    margin: 0;
-    font-family: 'Limelight', 'Literata', sans-serif;
-    background: linear-gradient(200deg, #f3f3f3, #dbacee, #db80f1);
-    background-size: cover;
-    background-attachment: fixed;
-    background-position: center;
-    background-repeat: no-repeat;
     overflow-x: hidden;
-    width: 100%;
-    min-width: 320px;
-}
-@keyframes gradientAnimation {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
 }
 
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: #34495e;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, #2ecc71 50%, transparent 100%),
+        radial-gradient(2px 2px at 40px 70px, #3498db 50%, transparent 100%),
+        radial-gradient(2px 2px at 50px 160px, #2ecc71 50%, transparent 100%),
+        radial-gradient(2px 2px at 90px 40px, #3498db 50%, transparent 100%),
+        radial-gradient(2px 2px at 130px 80px, #2ecc71 50%, transparent 100%),
+        radial-gradient(2px 2px at 160px 120px, #3498db 50%, transparent 100%);
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    opacity: 0.3;
+    animation: moveStars 20s linear infinite;
+}
+
+/* Header y navegación actualizada para que coincida con AdminStyle */
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px;
-    background-color: white;
-    gap: 20px;
+    padding: 15px 20px;
+    background-color: transparent;
     width: 100%;
-    flex-wrap: wrap;
+    box-sizing: border-box;
+}
+
+/* Logo actualizado */
+.logo {
+    flex: 0 0 auto;
 }
 
 .logo img {
-    width: 200px;
-    max-height: 100px;
+    width: 300px;
+    max-height: 80px;
+    filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.3))
+           drop-shadow(0 0 20px rgba(52, 152, 219, 0.3));
+    transition: all 0.3s ease;
+    object-fit: contain;
+}
+
+.logo img:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 15px rgba(46, 204, 113, 0.5))
+           drop-shadow(0 0 30px rgba(52, 152, 219, 0.5));
+}
+
+/* Navbar actualizado */
+.main-nav {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: flex-end;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.menu-horizontal {
+    list-style: none;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0;
+    margin: 0;
+    gap: 15px;
+}
+
+.menu-horizontal > li > a {
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: bold;
+    font-family: "Literata", serif;
+    padding: 12px 20px;
+    display: block;
+    border: none;
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    white-space: nowrap;
+}
+
+.menu-horizontal > li > a:hover {
+    background-color: #2ecc71;
+    color: white;
+    transform: scale(1.05);
+}
+
+.menu-horizontal > li > a > i {
+    margin-right: 10px;
+    color: #1c5b99;
+}
+
+/* Menú vertical actualizado */
+.menu-vertical {
+    position: absolute;
+    display: none;
+    list-style: none;
+    background: rgba(52, 73, 94, 0.95);
+    padding: 8px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    min-width: 180px;
+    z-index: 100;
+}
+
+.menu-horizontal li:hover .menu-vertical {
+    display: block;
+}
+
+.menu-vertical > li > a {
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 16px;
+    font-family: "Literata", serif;
+    padding: 8px 15px;
+    display: block;
+    border: none;
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    white-space: nowrap;
+}
+
+.menu-vertical > li > a:hover {
+    background-color: #2ecc71;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* Estilos específicos para la sección de desafíos */
+.container {
+    padding: 20px;
+    max-width: 600px;  /* Reducido de 800px */
+    margin: 0 auto;
+}
+
+h2 {
+    font-size: 42px;  /* Reducido de 60px */
+    color: #2ecc71;
+    text-align: center;
+    margin: 20px auto;  /* Reducido de 30px */
+    font-family: "Rubik", "Literata", sans-serif;
+    -webkit-text-stroke: 0.5px #ffffff;
+}
+
+.desafios-section {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #2ecc71;
+    border-radius: 12px;
+    padding: 15px;  /* Reducido de 20px */
+    margin-bottom: 15px;  /* Reducido de 20px */
+    backdrop-filter: blur(5px);
+    height: auto;
+    max-height: 480px;  /* Aproximadamente 8cm en px */
+    overflow-y: auto;
+}
+
+.desafio-form {
+    display: grid;
+    gap: 15px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    color: #ffffff;
+    font-size: 16px;  /* Aumentado de 14px */
+    font-family: "Literata", serif;
+    margin-bottom: 5px;
+}
+
+.form-group select,
+.form-group input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #2ecc71;
+    border-radius: 8px;
+    padding: 10px;  /* Aumentado de 8px */
+    color: #ffffff;
+    font-family: "Literata", serif;
+    font-size: 16px;  /* Aumentado de 14px */
+}
+
+.form-group select {
+    cursor: pointer;
+}
+
+.form-group select option {
+    background: #34495e;
+    color: #ffffff;
+}
+
+.btn-crear {
+    background: #2ecc71;
+    color: white;
+    padding: 12px 25px;  /* Ajustado */
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-family: "Literata", serif;
+    font-size: 16px;  /* Aumentado */
+    transition: all 0.3s ease;
+    margin: 15px auto;  /* Centrado horizontal */
+    width: fit-content;  /* Ajusta el ancho al contenido */
+    min-width: 120px;   /* Ancho mínimo */
+    display: block;      /* Para que margin auto funcione */
+}
+
+.btn-crear:hover {
+    background: #3498db;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
+}
+
+/* Estilos para desafíos activos */
+.desafios-activos {
+    margin-top: 40px;
+}
+
+.desafios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.desafio-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #2ecc71;
+    border-radius: 12px;
+    padding: 15px;
+    backdrop-filter: blur(5px);
+}
+
+.desafio-card h3 {
+    color: #ffffff;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.desafio-info {
+    color: #ffffff;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.desafio-status {
+    color: #2ecc71;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.btn-eliminar {
+    background: #e74c3c;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.btn-eliminar:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+/* Media queries */
+@media screen and (max-width: 768px) {
+    .header {
+        padding: 10px;
+    }
+    
+    .logo img {
+        width: 220px;
+        max-height: 60px;
+    }
+    
+    .menu-horizontal > li > a {
+        font-size: 16px;
+        padding: 8px 12px;
+    }
+    
+    h2 {
+        font-size: 42px;
+        -webkit-text-stroke: 0.3px #ffffff;
+    }
+}
+
+@keyframes moveStars {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 200px 200px;
+    }
+}
+
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .IMPULSA-EL-CAMBIO {
@@ -48,92 +339,13 @@ body {
     margin: 0;
     font-family: 'Limelight', 'Literata', sans-serif;
 }
-.menu-horizontal {
-    list-style: none;
-    display: flex;
-    justify-content: center; 
-    background-color: #8e44ad;
-    padding: 0;
-    margin: 0;
-    position: center;
-    gap: 10px; 
-}
-
-.menu-horizontal > li {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.menu-horizontal > li > a {
-    display: block;
-    padding: 15px 20px; 
-    color: white;
-    text-decoration: none;
-    font-family: 'Mitr', sans-serif;
-    font-weight: 400;
-    font-size: 16px;
-}
-
-/* Estilos para el menú desplegable */
-.menu-vertical {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #9b59b6;
-    padding: 0;
-    list-style: none;
-    min-width: 180px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.menu-horizontal > li:hover .menu-vertical {
-    display: block;
-}
-
-.menu-vertical li {
-    width: 100%;
-}
-
-.menu-vertical li a {
-    display: block;
-    padding: 12px 20px;
-    color: white;
-    text-decoration: none;
-    font-family: 'Mitr', sans-serif;
-    font-weight: 300;
-    font-size: 14px;
-}
-
-/* Efectos hover */
-.menu-horizontal > li > a:hover,
-.menu-vertical li a:hover {
-    background-color: #8e44ad;
-}
 
 /* Estilo para el ícono de flecha */
 .fas.fa-caret-down {
     margin-left: 5px;
 }
 
-/* Container styles */
-.container {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-}
-
 /* Form section styles */
-.desafios-section {
-    background: white;
-    border-radius: 10px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
 .desafios-section h2 {
     margin-top: 0;
     color: #333;
@@ -154,15 +366,6 @@ body {
     margin-bottom: 0.5rem;
     color: #333;
     font-weight: 500;
-}
-
-.form-group select,
-.form-group input {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-family: inherit;
 }
 
 .btn-crear {

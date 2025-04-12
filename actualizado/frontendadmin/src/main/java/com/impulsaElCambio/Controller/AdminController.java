@@ -7,8 +7,6 @@ import com.impulsaElCambio.Servicios.ProyectoService;
 import com.impulsaElCambio.Servicios.UsuarioService;
 import com.impulsaElCambio.Servicios.ForoService;
 
-
-
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +18,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.format.annotation.DateTimeFormat;
-
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -484,9 +481,6 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
-
-
     /**
      * Cierra la sesión del administrador.
      * 
@@ -501,6 +495,46 @@ public class AdminController {
         return "redirect:/Inicio";
     }
 
-    
+    /**
+     * Muestra la página de crear proyecto.
+     */
+    @GetMapping("/crear")
+    public String mostrarCrearProyecto(HttpSession session, Model model) throws Exception {
+        verificarAdmin(session);
+        return "Crear";
+    }
 
-}
+    /**
+     * Sube una imagen para el proyecto.
+     */
+
+    /**
+     * Valida los campos del proyecto antes de crear.
+     */
+    @PostMapping("/crear/validar")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> validarProyecto(
+            @RequestParam("nombre") String nombre,
+            @RequestParam("descripcion") String descripcion,
+            @RequestParam("fechaExpiracion") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaExpiracion) {
+        
+        Map<String, Object> response = new HashMap<>();
+        boolean isValid = true;
+        String message = "";
+
+        if (nombre == null || nombre.trim().isEmpty()) {
+            isValid = false;
+            message = "El nombre es requerido";
+        } else if (descripcion == null || descripcion.trim().isEmpty()) {
+            isValid = false;
+            message = "La descripción es requerida";
+        } else if (fechaExpiracion == null || fechaExpiracion.isBefore(LocalDateTime.now())) {
+            isValid = false;
+            message = "La fecha de expiración debe ser posterior a la fecha actual";
+        }
+
+        response.put("valid", isValid);
+        response.put("message", message);
+        return ResponseEntity.ok(response);
+    }
+} // Fin de AdminController

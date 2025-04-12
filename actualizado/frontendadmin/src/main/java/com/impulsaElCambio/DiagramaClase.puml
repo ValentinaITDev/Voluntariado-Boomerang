@@ -1,0 +1,169 @@
+@startuml ImpulsaElCambio
+
+' Configuración de estilos StarUML
+skinparam class {
+    BackgroundColor White
+    ArrowColor #2C3E50
+    BorderColor #2C3E50
+    AttributeFontColor black
+    AttributeFontSize 11
+    AttributeFontName Arial
+    FontSize 12
+    FontName Arial
+}
+
+skinparam enum {
+    BackgroundColor White
+    BorderColor #2C3E50
+    FontColor black
+}
+
+skinparam arrow {
+    Color #2C3E50
+    FontColor #2C3E50
+    FontSize 11
+    FontName Arial
+}
+
+hide circle
+hide empty members
+skinparam linetype ortho
+skinparam style strictuml
+
+class Usuario {
+    -id: Long
+    -nombre: String
+    -email: String
+    -contraseña: String
+    -fechaRegistro: DateTime
+    -estado: EstadoUsuario
+    -rol: RolUsuario
+    +iniciarSesion()
+    +cerrarSesion()
+    +actualizarPerfil()
+    +verProyectosParticipados()
+}
+
+enum EstadoUsuario {
+    ACTIVO
+    INACTIVO
+}
+
+class Administrador {
+    +gestionarUsuarios()
+    +gestionarProyectos()
+    +gestionarDesafios()
+    +generarReportes()
+    +moderarForo()
+    +visualizarEstadisticas()
+}
+
+class Proyecto {
+    -id: Long
+    -nombre: String
+    -descripcion: String
+    -fechaCreacion: DateTime
+    -fechaExpiracion: DateTime
+    -activo: boolean
+    -progreso: float
+    +crearProyecto()
+    +modificarProyecto()
+    +eliminarProyecto()
+    +obtenerDetalles()
+    +actualizarProgreso()
+    +generarReporte()
+    +calcularImpacto()
+    +listarParticipantes()
+}
+
+class Desafio {
+    -id: Long
+    -nombre: String
+    -descripcion: String
+    -puntosRecompensa: int
+    -fechaInicio: DateTime
+    -fechaFin: DateTime
+    -activo: boolean
+    -tipo: TipoDesafio
+    +crearDesafio()
+    +eliminarDesafio()
+    +modificarDesafio()
+    +asignarAProyecto()
+}
+
+class Participacion {
+    -id: Long
+    -fechaUnion: DateTime
+    -estado: EstadoParticipacion
+    +unirseProyecto()
+    +abandonarProyecto()
+}
+
+class DesafioCompletado {
+    -id: Long
+    -fechaCompletado: DateTime
+    -puntosObtenidos: int
+    +otorgarPuntos()
+}
+
+class Foro {
+    -id: Long
+    -titulo: String
+    -contenido: String
+    -fechaPublicacion: DateTime
+    +crearPublicacion()
+    +editarPublicacion()
+    +eliminarPublicacion()
+    +listarPublicaciones()
+    +responderPublicacion()
+}
+
+class Logro {
+    -id: Long
+    -nombre: String
+    -puntos: int
+    -icono: String
+    +otorgarLogro()
+}
+
+enum RolUsuario {
+    ADMIN
+    VOLUNTARIO
+}
+
+enum TipoDesafio {
+    PUBLICAR_FORO
+    UNIRSE_PROYECTO
+}
+
+enum EstadoParticipacion {
+    ACTIVO
+    INACTIVO
+    COMPLETADO
+    ABANDONADO
+}
+
+enum EstadoProyecto {
+    EN_PROGRESO
+    COMPLETADO
+    CANCELADO
+}
+
+Usuario <|-- Administrador
+
+' Relaciones con multiplicidad completa
+Participacion "1" -- "*" Usuario : tiene >
+Usuario "1" -- "*" DesafioCompletado : completa >
+Usuario "1" -- "*" Foro : publica >
+Usuario "1" -- "*" Logro : obtiene >
+
+Proyecto "1" -- "*" Participacion : tiene >
+Proyecto "1" -- "1" Desafio : contiene >
+
+Desafio "1" -- "1" TipoDesafio : tiene >
+' Relaciones con enumeraciones
+Usuario "*" -- "1" EstadoUsuario : tiene estado >
+Usuario "*" -- "1" RolUsuario : tiene rol >
+Proyecto "1" -- "1" EstadoProyecto : tiene estado >
+Usuario "1" -- "1" EstadoParticipacion : tiene tipo >
+@enduml

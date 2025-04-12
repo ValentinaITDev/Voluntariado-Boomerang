@@ -25,73 +25,60 @@
       <div class="logo">
         <img src="/Imagenes/Logo.png" alt="Logo" class="Logo" />
       </div>
+      <nav class="main-nav">
+        <ul class="menu-horizontal">
+          <li>
+            <a href="/admin/inicio"><i class="fas fa-home" style="color: #1c5b99"></i> Inicio</a>
+          </li>
+          <li>
+            <a href="/admin/crear">
+              <i class="fas fa-plus-circle" style="color: #1c5b99"></i> Crear
+            </a>
+          </li>
+          <li>
+            <a href="#">
+              <i class="fas fa-users" style="color: #1c5b99"></i> Voluntarios
+              <i class="fas fa-caret-down" style="color: #1c5b99"></i>
+            </a>
+            <ul class="menu-vertical">
+              <li>
+                <a href="/Graficas">
+                  <i class="fas fa-chart-line" style="color: #1c5b99"></i> Ver Graficas
+                </a>
+              </li>
+              <li>
+                <a href="/admin/Estadisticas">
+                  <i class="fas fa-chart-bar" style="color: #1c5b99"></i> Estadísticas
+                </a>
+              </li>
+              <li>
+                <a href="/admin/ManejoUser">
+                  <i class="fas fa-user-plus" style="color: #1c5b99"></i> Registro
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <a href="#">
+              <i class="fas fa-comments" style="color: #1c5b99"></i> Foro
+              <i class="fas fa-caret-down" style="color: #1c5b99"></i>
+            </a>
+            <ul class="menu-vertical">
+              <li>
+                <a href="/admin/foroAdmin">
+                  <i class="fas fa-comment-dots" style="color: #1c5b99"></i> Ver Publicaciones
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <a href="/PerfilAdmin">
+              <i class="fas fa-user" style="color: #1c5b99"></i> Mi Cuenta
+            </a>
+          </li>
+        </ul>
+      </nav>
     </header>
-    <nav>
-      <ul class="menu-horizontal">
-        <li>
-          <a href="/admin/inicio"><i class="fas fa-home" style="color: #1c5b99"></i> Inicio</a>
-        </li>
-        <li>
-          <a href="#"
-            ><i class="fas fa-project-diagram" style="color: #1c5b99"></i> Proyectos
-            <i class="fas fa-caret-down" style="color: #1c5b99"></i
-          ></a>
-          <ul class="menu-vertical">
-            <li>
-              <a href="/admin/proyectos"
-                ><i class="fas fa-list" style="color: #1c5b99"></i> Ver Proyectos</a
-              >
-            </li>
-            <li>
-              <a href="/admin/desafios/crear"
-                ><i class="fas fa-flag" style="color: #1c5b99"></i> Desafío</a
-              >
-            </li>
-          </ul>
-        </li>
-        <li>
-          <a href="#"
-            ><i class="fas fa-users" style="color: #1c5b99"></i> Voluntarios
-            <i class="fas fa-caret-down" style="color: #1c5b99"></i
-          ></a>
-          <ul class="menu-vertical">
-            <li>
-              <a href="/Graficas"
-                ><i class="fas fa-chart-line" style="color: #1c5b99"></i> Ver Graficas</a
-              >
-            </li>
-            <li>
-              <a href="/admin/Estadisticas"
-                ><i class="fas fa-chart-bar" style="color: #1c5b99"></i> Estadísticas</a
-              >
-            </li>
-            <li>
-              <a href="/admin/ManejoUser"
-                ><i class="fas fa-user-plus" style="color: #1c5b99"></i> Registro</a
-              >
-            </li>
-          </ul>
-        </li>
-        <li>
-          <a href="#"
-            ><i class="fas fa-comments" style="color: #1c5b99"></i> Foro
-            <i class="fas fa-caret-down" style="color: #1c5b99"></i
-          ></a>
-          <ul class="menu-vertical">
-            <li>
-              <a href="/admin/foroAdmin"
-                ><i class="fas fa-comment-dots" style="color: #1c5b99"></i> Ver Publicaciones</a
-              >
-            </li>
-          </ul>
-        </li>
-        <li>
-          <a href="/PerfilAdmin">
-            <i class="fas fa-user" style="color: #1c5b99"></i> Mi Cuenta
-          </a>
-        </li>
-      </ul>
-    </nav>
     <main>
       <h2>Panel de Control Administrativo</h2>
       <div class="dashboard-grid">
@@ -136,13 +123,15 @@
         const menuItems = document.querySelectorAll(".menu-horizontal > li");
 
         // Manejador del botón de menú móvil
-        menuButton.addEventListener("click", function () {
-          menuButton.classList.toggle("active");
-          nav.classList.toggle("active");
-          menuHorizontal.classList.toggle("active");
-          overlay.classList.toggle("active");
-          document.body.classList.toggle("no-scroll");
-        });
+        if (menuButton) {
+          menuButton.addEventListener("click", function () {
+            menuButton.classList.toggle("active");
+            nav.classList.toggle("active");
+            menuHorizontal.classList.toggle("active");
+            overlay.classList.toggle("active");
+            document.body.classList.toggle("no-scroll");
+          });
+        }
 
         // Nuevo manejador para los elementos del menú
         menuItems.forEach((item) => {
@@ -180,7 +169,9 @@
 
         // Cerrar menú al hacer clic en el overlay
         overlay.addEventListener("click", function () {
-          menuButton.classList.remove("active");
+          if (menuButton) {
+            menuButton.classList.remove("active");
+          }
           nav.classList.remove("active");
           menuHorizontal.classList.remove("active");
           overlay.classList.remove("active");
