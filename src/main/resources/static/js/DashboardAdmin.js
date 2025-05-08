@@ -38,8 +38,7 @@ function cargarProyectosDestacados() {
 
             if (!Array.isArray(proyectos) || proyectos.length === 0) {
                 proyectosGrid.innerHTML = '<div class="no-projects">No hay proyectos destacados disponibles</div>';
-                console.log('No se encontraron proyectos, cargando ejemplos...');
-                cargarProyectosEjemplo();
+                console.log('No se encontraron proyectos.');
                 return;
             }
 
@@ -120,68 +119,8 @@ function cargarProyectosDestacados() {
                     <span>Error al cargar proyectos. Intente más tarde.</span>
                 </div>
             `;
-            console.log('Error en API, cargando proyectos de ejemplo...');
-            cargarProyectosEjemplo();
+            console.log('Error en API, no se cargarán proyectos de ejemplo.');
         });
-}
-
-// Cargar proyectos de ejemplo (sin cambios mayores)
-function cargarProyectosEjemplo() {
-    const proyectosGrid = document.getElementById('proyectos-grid');
-     if (!proyectosGrid) return;
-    proyectosGrid.innerHTML = `
-        <div class="admin-project-card">
-            <div class="project-header">
-                <h3>Limpieza de Playas (Ejemplo)</h3>
-                <span class="status high-priority">Alta Prioridad</span>
-            </div>
-            <div class="project-stats">
-                <div class="stat">
-                    <i class="fas fa-user-check"></i>
-                    <span>45 Voluntarios</span>
-                </div>
-                <div class="stat">
-                    <i class="fas fa-clock"></i>
-                    <span>3 días restantes</span>
-                </div>
-            </div>
-            <div class="progress-container">
-                <div class="progress-info">
-                    <span>Progreso</span>
-                    <span>75%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress" style="width: 75%"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="admin-project-card">
-            <div class="project-header">
-                <h3>Reforestación Urbana (Ejemplo)</h3>
-                <span class="status medium-priority">Media Prioridad</span>
-            </div>
-            <div class="project-stats">
-                <div class="stat">
-                    <i class="fas fa-user-check"></i>
-                    <span>32 Voluntarios</span>
-                </div>
-                <div class="stat">
-                    <i class="fas fa-clock"></i>
-                    <span>7 días restantes</span>
-                </div>
-            </div>
-            <div class="progress-container">
-                <div class="progress-info">
-                    <span>Progreso</span>
-                    <span>45%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress" style="width: 45%"></div>
-                </div>
-            </div>
-        </div>
-    `;
 }
 
 // Actualizar fecha y hora (sin cambios mayores)
