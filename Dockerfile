@@ -8,7 +8,7 @@ RUN apk add --no-cache maven
 COPY . .
 
 # Compilar el proyecto
-RUN mvn package -DskipTests || echo "Compilación fallida, verificando JAR..."
+RUN mvn package -DskipTests || echo 
 
 # Verificar que el JAR se creó correctamente
 RUN find /app/target -name "*.jar" -type f
