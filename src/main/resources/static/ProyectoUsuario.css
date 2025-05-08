@@ -1,0 +1,804 @@
+/* Estilos consolidados y mejorados para ProyectosUsuarios.html */
+/* Versión unificada con Styles.css - Títulos y botones consistentes */
+
+/* Variables globales actualizadas */
+:root {
+    --dark-blue: #1a365d;
+    --mint-green: #58d8ff;
+    --light-mint: #69a3fa;
+    --white: #ffffff;
+    --gray-light: #f0f0f0;
+    --transition: all 0.3s ease;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --border-radius: 12px;
+}
+
+/* Efecto de estrellas en el fondo */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image:
+        radial-gradient(2px 2px at 20px 30px, var(--mint-green) 50%, transparent 100%),
+        radial-gradient(2px 2px at 40px 70px, var(--light-mint) 50%, transparent 100%),
+        radial-gradient(2px 2px at 50px 160px, var(--mint-green) 50%, transparent 100%),
+        radial-gradient(2px 2px at 90px 40px, var(--light-mint) 50%, transparent 100%);
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    opacity: 0.1;
+    animation: moveStars 20s linear infinite;
+    z-index: -1;
+}
+
+/* Estilos base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Monda', sans-serif;
+    background-color: var(--dark-blue);
+    color: var(--white);
+    line-height: 1.6;
+    overflow-x: hidden;
+    font-size: 18px;
+}
+
+/* Navegación - Estilo unificado */
+.navbar {
+    height: 80px;
+    padding: 1rem 2rem;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: var(--dark-blue);
+}
+
+.nav-container {
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    margin-left: 1.5rem;
+    margin-right: 2rem;
+}
+
+.logo-img {
+    height: 70px;
+    transition: transform 0.3s ease;
+}
+
+.logo-img:hover {
+    transform: scale(1.05);
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+}
+
+.nav-links a {
+    color: var(--white);
+    text-decoration: none;
+    font-size: 1.1rem;
+    padding: 0.8rem 1.2rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-weight: 500;
+}
+
+.nav-links a i {
+    color: var(--mint-green);
+    font-size: 1.3rem;
+    transition: transform 0.3s ease;
+}
+
+.nav-links a:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-links a:hover i {
+    transform: scale(1.1);
+}
+
+.nav-links a.active {
+    background: rgba(88, 216, 255, 0.2);
+    border-bottom: 2px solid var(--mint-green);
+}
+
+/* Contenedor principal */
+.projects-user-container {
+    padding-top: calc(80px + 2rem);
+    min-height: 100vh;
+    background: var(--dark-blue);
+}
+
+/* Encabezado de proyectos - Estilo mejorado */
+.projects-header {
+    margin-bottom: 2rem;
+    text-align: center;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 1rem;
+}
+
+.projects-header h1 {
+    color: var(--mint-green);
+    margin-bottom: 1.5rem;
+    font-size: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Barra de pestañas - Estilo unificado */
+.tabs-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 50px;
+    background: var(--white);
+    color: var(--dark-blue);
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 600;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 1.1rem;
+}
+
+.tab-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.tab-btn.active {
+    background: var(--mint-green);
+    color: var(--dark-blue);
+    box-shadow: 0 4px 12px rgba(88, 216, 255, 0.3);
+}
+
+/* Barra de búsqueda */
+.search-container {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem auto;
+    max-width: 600px;
+}
+
+.search-container input {
+    padding: 0.8rem 1.5rem;
+    border: 1px solid #ddd;
+    border-radius: 25px 0 0 25px;
+    width: 100%;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: var(--mint-green);
+    box-shadow: 0 0 0 3px rgba(88, 216, 255, 0.2);
+}
+
+.search-btn {
+    padding: 0 1.5rem;
+    background: var(--mint-green);
+    color: var(--dark-blue);
+    border: none;
+    border-radius: 0 25px 25px 0;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.search-btn:hover {
+    background: var(--light-mint);
+}
+
+/* Filtros */
+.filter-section {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.filter-btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 25px;
+    background: var(--white);
+    color: var(--dark-blue);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--card-shadow);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.filter-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.filter-btn.active {
+    background: var(--mint-green);
+    color: var(--dark-blue);
+    box-shadow: 0 4px 12px rgba(88, 216, 255, 0.3);
+}
+
+/* Grid de proyectos y desafíos */
+.projects-grid,
+.challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 1rem;
+}
+
+/* Tarjetas de proyecto */
+.project-user-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+    opacity: 0;
+    transform: translateY(20px);
+    border: 1px solid rgba(88, 216, 255, 0.2);
+}
+
+.project-user-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.project-user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(88, 216, 255, 0.2);
+}
+
+.project-banner {
+    height: 150px;
+    background: linear-gradient(45deg, var(--dark-blue), var(--light-mint));
+    position: relative;
+    overflow: hidden;
+}
+
+.project-banner svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.2;
+    stroke: white;
+}
+
+.project-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.project-status {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    backdrop-filter: blur(5px);
+}
+
+/* Estados de proyectos */
+.participating .project-status {
+    background: rgba(46, 204, 113, 0.2);
+    color: var(--mint-green);
+}
+
+.available .project-status {
+    background: rgba(52, 152, 219, 0.2);
+    color: var(--light-mint);
+}
+
+.expired .project-status {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+/* Contenido de la tarjeta */
+.project-content {
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.project-content h3 {
+    margin-bottom: 0.8rem;
+    color: var(--mint-green);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.project-content p {
+    color: var(--gray-light);
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    flex-grow: 1;
+}
+
+.project-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: var(--gray-light);
+}
+
+.project-details span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* Botones de acción - Estilo unificado */
+.join-project-btn,
+.leave-project-btn {
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: auto;
+    font-size: 1rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.join-project-btn {
+    background: var(--mint-green);
+    color: var(--dark-blue);
+}
+
+.leave-project-btn {
+    background: #ff6b6b;
+    color: var(--white);
+}
+
+.join-project-btn:hover,
+.leave-project-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.join-project-btn:hover {
+    background: var(--light-mint);
+}
+
+.leave-project-btn:hover {
+    background: #ff5252;
+}
+
+.project-status-message {
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--white);
+    margin-top: auto;
+}
+
+/* Tarjetas de desafío */
+.challenge-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+    opacity: 0;
+    transform: translateY(20px);
+    border: 1px solid rgba(88, 216, 255, 0.2);
+}
+
+.challenge-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.challenge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(88, 216, 255, 0.2);
+}
+
+.challenge-banner {
+    height: 120px;
+    position: relative;
+    overflow: hidden;
+}
+
+.challenge-card.active .challenge-banner {
+    background: linear-gradient(45deg, #6a3093, #a044ff);
+}
+
+.challenge-card.completed .challenge-banner {
+    background: linear-gradient(45deg, #11998e, #38ef7d);
+}
+
+.challenge-card.available .challenge-banner {
+    background: linear-gradient(45deg, #0082c8, #667db6);
+}
+
+.challenge-status {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: white;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+}
+
+.challenge-content {
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.challenge-content h3 {
+    margin-bottom: 0.8rem;
+    color: var(--mint-green);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.challenge-content p {
+    color: var(--gray-light);
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    flex-grow: 1;
+}
+
+.challenge-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: var(--gray-light);
+}
+
+.challenge-details span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* Barra de progreso */
+.progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+}
+
+.challenge-card.active .progress {
+    background: linear-gradient(90deg, #6a3093, #a044ff);
+}
+
+.challenge-card.completed .progress {
+    background: linear-gradient(90deg, #11998e, #38ef7d);
+}
+
+.challenge-card.available .progress {
+    background: linear-gradient(90deg, #0082c8, #667db6);
+}
+
+.progress-text {
+    display: block;
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--gray-light);
+    margin-top: 0.3rem;
+}
+
+/* Botones de acción de desafíos */
+.participate-btn,
+.complete-btn,
+.view-btn {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+    font-weight: 600;
+    margin-top: auto;
+    font-size: 1rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.participate-btn {
+    background: #6a3093;
+    color: white;
+}
+
+.complete-btn {
+    background: #38ef7d;
+    color: var(--dark-blue);
+}
+
+.view-btn {
+    background: #0082c8;
+    color: white;
+}
+
+.participate-btn:hover,
+.complete-btn:hover,
+.view-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.participate-btn:hover {
+    background: #7d3cb1;
+}
+
+.complete-btn:hover {
+    background: #2ecc71;
+}
+
+.view-btn:hover {
+    background: #0077b6;
+}
+
+/* Animación de brillo para desafíos completados */
+@keyframes glow {
+    0% {
+        box-shadow: 0 5px 15px rgba(56, 239, 125, 0.4);
+    }
+    50% {
+        box-shadow: 0 5px 25px rgba(56, 239, 125, 0.7);
+    }
+    100% {
+        box-shadow: 0 5px 15px rgba(56, 239, 125, 0.4);
+    }
+}
+
+.challenge-card.completed {
+    animation: glow 2s infinite ease-in-out;
+}
+
+/* Mensajes cuando no hay contenido - Texto blanco asegurado */
+.no-content-message {
+    text-align: center;
+    padding: 2rem;
+    grid-column: 1 / -1;
+    color: var(--white) !important;
+    font-size: 1.2rem;
+}
+
+.no-content-message p {
+    color: var(--white) !important;
+    text-align: center;
+    padding: 2rem;
+    grid-column: 1 / -1;
+    font-size: 1.1rem;
+}
+
+/* Notificaciones */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 400px;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    transform: translateX(110%);
+    transition: transform 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    background-color: #d4edda;
+    border-left: 5px solid #28a745;
+    color: #155724;
+}
+
+.notification.error {
+    background-color: #f8d7da;
+    border-left: 5px solid #dc3545;
+    color: #721c24;
+}
+
+.notification.info {
+    background-color: #d1ecf1;
+    border-left: 5px solid #17a2b8;
+    color: #0c5460;
+}
+
+.notification.warning {
+    background-color: #fff3cd;
+    border-left: 5px solid #ffc107;
+    color: #856404;
+}
+
+.close-notification {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 10px;
+    opacity: 0.7;
+}
+
+.close-notification:hover {
+    opacity: 1;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes moveStars {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-200px);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .projects-user-container {
+        padding: 100px 1rem 1rem;
+    }
+
+    .projects-grid,
+    .challenges-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .project-details,
+    .challenge-details {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .nav-links {
+        gap: 1.5rem;
+    }
+
+    .nav-links a {
+        font-size: 1.1rem;
+        padding: 0.8rem 1rem;
+    }
+
+    .projects-header h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .projects-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .tab-btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    .project-banner,
+    .challenge-banner {
+        height: 120px;
+    }
+}

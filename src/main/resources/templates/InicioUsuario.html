@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - VolunteerHub</title>
-    <link rel="stylesheet" href="/styles.css">
+    <title>Dashboard - Voluntario</title>
+    <link rel="stylesheet" th:href="@{/Styles.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <nav class="navbar">
-        <div class="logo">VolunteerHub</div>
+        <div class="logo">
+            <img src="/images/logo.png" alt="Boomerang Voluntariado" class="logo-img">
+        </div>
         <ul class="nav-links">
-            <li><a href="/dashboard" class="active">Dashboard</a></li>
-            <li><a href="/mis-proyectos">Mis Proyectos</a></li>
-            <li><a href="/mis-desafios">Mis Desafíos</a></li>
-            <li><a href="/perfil">Perfil</a></li>
-            <li><a href="/logout">Cerrar Sesión</a></li>
+            <li><a th:href="@{/dashboard}" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a th:href="@{/usuario/proyectos}"><i class="fas fa-project-diagram"></i> Mis Proyectos</a></li>
+            <li><a th:href="@{/foros}"><i class="fas fa-comments"></i> Foros</a></li>
+            <li><a th:href="@{/usuario/perfil}"><i class="fas fa-user-circle"></i> Perfil</a></li>
+            <li><a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
         </ul>
     </nav>
 
@@ -45,42 +49,38 @@
 
         <main class="dashboard-content">
             <h2>Proyectos Actuales</h2>
-            
-            <!-- Mensaje si no hay proyectos -->
+
             <div th:if="${proyectosActuales.empty}" class="no-projects-message">
                 <p>No tienes proyectos activos actualmente. ¡Únete a un proyecto para comenzar!</p>
-                <a href="/proyectos" class="btn-primary">Explorar Proyectos</a>
+                <a th:href="@{/usuario/proyectos}" class="btn-primary">Explorar Proyectos</a>
             </div>
-            
-            <!-- Listado de proyectos dinámico -->
+
             <div class="projects-grid" th:unless="${proyectosActuales.empty}">
-                <!-- Iteración sobre los proyectos del usuario -->
-                <div class="project-card" th:each="proyecto : ${proyectosActuales}">
+                <div class="project-card" th:each="item : ${proyectosActuales}">
                     <div class="project-image">
                         <svg viewBox="0 0 200 200">
-                            <path fill="currentColor" d="M 0,100 C 0,30 30,0 100,0 S 200,30 200,100 170,200 100,200 0,170 0,100" />
+                            <path fill="currentColor"
+                                d="M 0,100 C 0,30 30,0 100,0 S 200,30 200,100 170,200 100,200 0,170 0,100" />
                         </svg>
                         <span class="project-status">En Progreso</span>
                     </div>
                     <div class="project-content">
-                        <h3 th:text="${proyecto.nombre}">Nombre del Proyecto</h3>
-                        <p>Proyecto activo desde <span th:text="${#temporals.format(proyecto.fechaUnion, 'dd/MM/yyyy')}">01/01/2023</span></p>
+                        <h3 th:text="${item.nombre ?: 'Proyecto sin nombre'}">Nombre del Proyecto</h3>
+                        <p>Proyecto activo</p>
                         <div class="progress-bar">
-                            <!-- Cálculo dinámico del progreso basado en contribuciones -->
-                            <div class="progress-fill" th:style="'width: ' + ((${proyecto.contribuciones.size()} * 10 > 100 ? 100 : ${proyecto.contribuciones.size()} * 10)) + '%'"></div>
+                            <div class="progress-fill" style="width: 50%"></div>
                         </div>
                         <div class="project-meta">
-                            <span><i class="fas fa-user-circle"></i> <span th:text="${proyecto.rol}">Rol</span></span>
-                            <span><i class="fas fa-tasks"></i> <span th:text="${proyecto.contribuciones.size()}">0</span> contribuciones</span>
+                            <span><i class="fas fa-user-circle"></i> <span th:text="${'Voluntario'}">Rol</span></span>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Ejemplo estático (se puede eliminar) -->
+
                 <div class="project-card" th:if="${proyectosActuales.size() < 3}">
                     <div class="project-image">
                         <svg viewBox="0 0 200 200">
-                            <path fill="currentColor" d="M 0,100 C 0,30 30,0 100,0 S 200,30 200,100 170,200 100,200 0,170 0,100" />
+                            <path fill="currentColor"
+                                d="M 0,100 C 0,30 30,0 100,0 S 200,30 200,100 170,200 100,200 0,170 0,100" />
                         </svg>
                         <span class="project-status">Nuevo</span>
                     </div>
@@ -88,41 +88,60 @@
                         <h3>Únete a más proyectos</h3>
                         <p>¡Explora más oportunidades de voluntariado!</p>
                         <div class="project-meta">
-                            <a href="/proyectos" class="btn-secondary">Ver proyectos disponibles</a>
+                            <a th:href="@{/usuario/proyectos}" class="btn-secondary">Ver proyectos disponibles</a>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Sección de desafíos recientes -->
-            <h2 class="mt-4">Desafíos Recientes</h2>
-            <div class="challenges-section" th:if="${!usuario.desafios.empty}">
-                <div class="challenge-list">
-                    <div class="challenge-item" th:each="desafio : ${usuario.desafios}" th:if="${desafio.progreso > 0}">
-                        <div class="challenge-info">
-                            <h3 th:text="${desafio.nombre}">Nombre del Desafío</h3>
-                            <div class="progress-container">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" th:style="'width: ' + ${desafio.progreso} + '%'"></div>
+
+            <div th:if="${not #lists.isEmpty(participacionesDesafio)}" class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-fire me-2"></i>Desafíos Recientes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <div th:each="participacion : ${participacionesDesafio}"
+                                class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1" th:text="${participacion.nombre}">Título del desafío</h5>
+                                    <small th:if="${participacion.completado}" class="text-success">Completado</small>
+                                    <small th:unless="${participacion.completado}" class="text-warning">En
+                                        progreso</small>
                                 </div>
-                                <span class="progress-text" th:text="${desafio.progreso} + '%'">0%</span>
+                                <div class="progress mt-2" style="height: 10px;">
+                                    <div th:if="${participacion.completado}" class="progress-bar bg-success"
+                                        role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0"
+                                        aria-valuemax="100">100%</div>
+                                    <div th:unless="${participacion.completado}" class="progress-bar bg-warning"
+                                        role="progressbar" th:style="'width: ' + ${participacion.progreso} + '%'"
+                                        th:attr="aria-valuenow=${participacion.progreso}" aria-valuemin="0"
+                                        aria-valuemax="100" th:text="${participacion.progreso} + '%'">50%</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="challenge-status" th:if="${desafio.completado}">
-                            <span class="badge-completed"><i class="fas fa-check-circle"></i> Completado</span>
-                        </div>
                     </div>
                 </div>
             </div>
-            <div class="no-challenges-message" th:if="${usuario.desafios.empty}">
-                <p>No tienes desafíos activos. ¡Comienza uno ahora!</p>
-                <a href="/desafios" class="btn-primary">Ver Desafíos</a>
+
+            <div th:if="${#lists.isEmpty(participacionesDesafio)}" class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-fire me-2"></i>Desafíos Recientes</h5>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <i class="fas fa-hiking fa-3x text-muted mb-3"></i>
+                            <p class="lead">Aún no tienes desafíos activos</p>
+                            <p class="text-muted">¡Pronto tendrás nuevos retos para completar!</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        // Animación de las barras de progreso al cargar la página
         window.addEventListener('load', () => {
             document.querySelectorAll('.progress-fill').forEach(bar => {
                 const width = bar.style.width;
@@ -134,4 +153,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/PerfilUsuario.css">
+    <link rel="stylesheet" th:href="@{/Styles.css}">
+    <title>Mi Perfil - Voluntario</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <img src="/images/logo.png" alt="Boomerang Voluntariado" class="logo-img">
+        </div>
+        <ul class="nav-links">
+            <li><a th:href="@{/dashboard}"><i class="fas fa-tachometer-alt"></i>Dashboard</a></li>
+            <li><a th:href="@{/usuario/proyectos}"><i class="fas fa-project-diagram"></i>Proyectos</a></li>
+            <li><a th:href="@{/foros}"><i class="fas fa-comments"></i>Foro</a></li>
+            <li><a th:href="@{/usuario/perfil}" class="active"><i class="fas fa-user-circle"></i>Mi Perfil</a></li>
+            <li>
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit">
+                        <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="profile-container">
+        <header class="profile-header">
+            <!-- Área de foto de perfil -->
+            <div class="profile-photo-container">
+                <img src="/static/img/perfiles.png" alt="Foto de perfil" class="profile-photo" id="profile-photo">
+                <label for="profile-photo-upload" class="upload-overlay">
+                    <i class="fas fa-camera"></i>
+                    <span>Cambiar foto</span>
+                </label>
+                <input type="file" id="profile-photo-upload" style="display: none;" accept="image/*">
+            </div>
+
+            <h1 class="profile-name" id="user-name">Cargando...</h1>
+            <p class="profile-title" id="user-title">Cargando...</p>
+
+            <!-- Estadísticas del usuario -->
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="stat-number" id="total-proyectos">0</div>
+                    <div class="stat-label">Proyectos</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="stat-number" id="total-puntos">0</div>
+                    <div class="stat-label">Puntos</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="stat-number" id="total-insignias">0</div>
+                    <div class="stat-label">Insignias</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="profile-content">
+            <!-- Tabs de navegación -->
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="info">
+                    <i class="fas fa-user"></i> Información Personal
+                </button>
+                <button class="tab-btn" data-tab="projects">
+                    <i class="fas fa-project-diagram"></i> Mis Proyectos
+                </button>
+                <button class="tab-btn" data-tab="badges">
+                    <i class="fas fa-medal"></i> Mis Insignias
+                </button>
+                <button class="tab-btn" data-tab="settings">
+                    <i class="fas fa-lock"></i> Cambiar Contraseña
+                </button>
+            </div>
+
+            <!-- Contenido de las tabs -->
+            <div id="info" class="tab-content active">
+                <div class="info-card">
+                    <h3><i class="fas fa-user-circle"></i> Información Personal</h3>
+
+                    <div class="info-row">
+                        <div class="info-label">Nombre</div>
+                        <div class="info-value editable">
+                            <input type="text" id="nombre-input" class="field-locked" disabled>
+                            <i class="fas fa-lock lock-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">Correo Electrónico</div>
+                        <div class="info-value editable">
+                            <input type="email" id="correo-input" class="field-locked" disabled>
+                            <i class="fas fa-lock lock-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">Teléfono</div>
+                        <div class="info-value">
+                            <input type="tel" id="numero-input">
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-label">Empresa</div>
+                        <div class="info-value">
+                            <input type="text" id="empresa-input">
+                        </div>
+                    </div>
+
+                    <div class="info-row" style="justify-content: flex-end;">
+                        <button class="edit-btn" id="edit-info-btn">
+                            <i class="fas fa-pen"></i> Editar Información
+                        </button>
+                        <button class="save-btn" id="save-info-btn" style="display: none;">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="projects" class="tab-content">
+                <h3 style="margin-bottom: 2rem; text-align: center; color: var(--primary-color);">
+                    <i class="fas fa-project-diagram"></i> Mis Proyectos
+                </h3>
+
+                <div class="projects-grid" id="proyectos-activos-container">
+                    <!-- Los proyectos activos se cargarán aquí dinámicamente -->
+                    <div class="loading-placeholder">Cargando proyectos activos...</div>
+                </div>
+
+                <h3 style="margin: 2rem 0; text-align: center; color: var(--primary-color);">
+                    <i class="fas fa-check-circle"></i> Proyectos Completados
+                </h3>
+
+                <div class="projects-grid" id="proyectos-completados-container">
+                    <!-- Los proyectos completados se cargarán aquí dinámicamente -->
+                    <div class="loading-placeholder">Cargando proyectos completados...</div>
+                </div>
+            </div>
+
+            <div id="badges" class="tab-content">
+                <h3 style="margin-bottom: 2rem; text-align: center; color: var(--primary-color);">
+                    <i class="fas fa-medal"></i> Mis Insignias
+                </h3>
+
+                <div class="badges-grid" id="insignias-container">
+                    <!-- Las insignias se cargarán aquí dinámicamente -->
+                    <div class="loading-placeholder">Cargando insignias...</div>
+                </div>
+            </div>
+
+            <div id="settings" class="tab-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-lock"></i> Cambiar Contraseña</h3>
+
+                    <form class="password-form" id="change-password-form">
+                        <div class="form-group">
+                            <label>Contraseña Actual</label>
+                            <input type="password" id="old-password">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Nueva Contraseña</label>
+                            <input type="password" id="new-password">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Confirmar Nueva Contraseña</label>
+                            <input type="password" id="confirm-password">
+                        </div>
+
+                        <div class="password-requirements">
+                            <p style="margin-bottom: 1rem; font-weight: 500;">Requisitos de seguridad:</p>
+                            <div class="requirement-item" id="req-length">
+                                <i class="fas fa-circle"></i>
+                                <span>Mínimo 8 caracteres</span>
+                            </div>
+                            <div class="requirement-item" id="req-uppercase">
+                                <i class="fas fa-circle"></i>
+                                <span>Al menos una mayúscula</span>
+                            </div>
+                            <div class="requirement-item" id="req-lowercase">
+                                <i class="fas fa-circle"></i>
+                                <span>Al menos una minúscula</span>
+                            </div>
+                            <div class="requirement-item" id="req-number">
+                                <i class="fas fa-circle"></i>
+                                <span>Al menos un número</span>
+                            </div>
+                        </div>
+
+                        <div id="password-error" class="error-message"
+                            style="display: none; color: red; margin-bottom: 1rem;"></div>
+                        <div id="password-success" class="success-message"
+                            style="display: none; color: green; margin-bottom: 1rem;"></div>
+
+                        <button type="submit" class="change-password-btn">
+                            <i class="fas fa-key"></i> Cambiar Contraseña
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/Perfil.js}" defer></script>
+</body>
+
+</html>

@@ -1,12 +1,17 @@
 package com.Impulso.Alcambio.Modelo;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.Getter;
+import lombok.Setter;
 
-import com.Impulso.Alcambio.Modelo.Proyecto.EstadoProyecto;
+// Se elimina la importación de EstadoProyecto si ya no se usa directamente aquí
+// import com.Impulso.Alcambio.Modelo.Proyecto.EstadoProyecto;
 
 @Document(collection = "usuarios")
 public class Usuario {
@@ -18,26 +23,26 @@ public class Usuario {
     private String correo;
     private String numero;
     private String password;
+    @Indexed
     private String empresa;
     private String imagenPerfil;
+    @Indexed
     private Rol rol;
     private LocalDateTime fechaRegistro;
-    
-    // SISTEMA DE JUEGO
-    private MecanicaJuego mecanicaJuego;
 
-    // PROYECTOS ACTIVOS EMBEBIDO
-    private List<ProyectoResumen> proyectosActivos = new ArrayList<>();
+    // Referencias a proyectos usando solo IDs para mejor rendimiento
+    @Indexed
+    private List<String> proyectosParticipadosIds = new ArrayList<>();
     
-    // DESAFIOS ACTIVOS EMBEBIDO
-    private List<DesafioUsuario> desafios = new ArrayList<>();
-
-    // CONSTRUCTOR VACIO REQUERIDO PARA QU ENO HAYA EL ERROR DEL NULLPOINTER AL TRATAR DE ASIGNAR EL OBJETO GAMIFICACION
+    // Cache de estadísticas para evitar cálculos frecuentes
+    private Map<String, Object> cacheEstadisticas = new HashMap<>();
+    
+    // CONSTRUCTOR VACIO REQUERIDO
     public Usuario() {
-        this.mecanicaJuego = new MecanicaJuego();
+        this.fechaRegistro = LocalDateTime.now();
     }
 
-    // CONSTRUCTOR CON CAMPOS BASICOS"USUARIO"
+    // CONSTRUCTOR CON CAMPOS BASICOS
     public Usuario(String nombre, String correo, String numero, String password, String empresa) {
         this();
         this.nombre = nombre;
@@ -45,52 +50,6 @@ public class Usuario {
         this.numero = numero;
         this.password = password;
         this.empresa = empresa;
-        this.fechaRegistro = LocalDateTime.now();
-    }
-
-    // CLASE EMBEBIDA PARA LA MECANICA DE JUEGO
-    public static class MecanicaJuego {
-        //ATRIBUTOS DE LA MECANICA DE JUEGO
-        private int puntos;
-        private List<String> insignias = new ArrayList<>();
-        private List<LogroDesbloqueado> logros = new ArrayList<>();
-
-        // GETTERS Y SETTERS DE LA MECANICA DE JUEGO
-        public int getPuntos() {
-            return puntos;
-        }
-
-        public void setPuntos(int puntos) {
-            this.puntos = puntos;
-        }
-
-        public List<String> getInsignias() {
-            return insignias;
-        }
-
-        public void setInsignias(List<String> insignias) {
-            this.insignias = insignias;
-        }
-
-        public List<LogroDesbloqueado> getLogros() {
-            return logros;
-        }
-
-        public void setLogros(List<LogroDesbloqueado> logros) {
-            this.logros = logros;
-        }
-
-        // Métodos ADICIONALES
-        public void agregarLogro(LogroDesbloqueado logro) {
-            this.logros.add(logro);
-            this.puntos += logro.getPuntosOtorgados();
-        }
-
-        public void agregarInsignia(String insignia) {
-            if (!this.insignias.contains(insignia)) {
-                this.insignias.add(insignia);
-            }
-        }
     }
 
     // Clase embebida para logros
@@ -128,154 +87,6 @@ public class Usuario {
 
         public void setPuntosOtorgados(int puntosOtorgados) {
             this.puntosOtorgados = puntosOtorgados;
-        }
-    }
-
-    // Clase embebida para resumen de proyectos
-    public static class ProyectoResumen {
-        private String proyectoId;
-        private String nombre;
-        private LocalDateTime fechaUnion;
-        private String rol;
-        private EstadoProyecto estado;
-        private List<String> contribuciones = new ArrayList<>();
-
-        // Constructor
-        public ProyectoResumen(String proyectoId, String nombre, String rol) {
-            this.proyectoId = proyectoId;
-            this.nombre = nombre;
-            this.rol = rol;
-            this.estado = EstadoProyecto.ACTIVO;
-            this.fechaUnion = LocalDateTime.now();
-        }
-
-        // Getters y Setters de ProyectoResumen
-        public String getProyectoId() {
-            return proyectoId;
-        }
-
-        public void setProyectoId(String proyectoId) {
-            this.proyectoId = proyectoId;
-        }
-
-        public String getNombre() {
-            return nombre;
-        }
-
-        public void setNombre(String nombre) {
-            this.nombre = nombre;
-        }
-
-        public LocalDateTime getFechaUnion() {
-            return fechaUnion;
-        }
-
-        public void setFechaUnion(LocalDateTime fechaUnion) {
-            this.fechaUnion = fechaUnion;
-        }
-
-        public String getRol() {
-            return rol;
-        }
-
-        public void setRol(String rol) {
-            this.rol = rol;
-        }
-
-        public List<String> getContribuciones() {
-            return contribuciones;
-        }
-
-        public void setContribuciones(List<String> contribuciones) {
-            this.contribuciones = contribuciones;
-        }
-
-        public EstadoProyecto getEstado() { 
-            return estado;
-        }
-
-        public void setEstado(EstadoProyecto estado) {
-            this.estado = estado;
-        }
-    }
-
-    // Clase embebida para desafíos del usuario
-    public static class DesafioUsuario {
-        private String desafioId;
-        private String nombre;
-        private LocalDateTime fechaInicio;
-        private LocalDateTime fechaCompletado;
-        private boolean completado;
-        private int progreso;
-        private List<String> actividadesCompletadas = new ArrayList<>();
-
-        // Constructor
-        public DesafioUsuario(String desafioId, String nombre) {
-            this.desafioId = desafioId;
-            this.nombre = nombre;
-            this.fechaInicio = LocalDateTime.now();
-            this.completado = false;
-            this.progreso = 0;
-        }
-
-        // Getters y Setters de DesafioUsuario
-        public String getDesafioId() {
-            return desafioId;
-        }
-
-        public void setDesafioId(String desafioId) {
-            this.desafioId = desafioId;
-        }
-
-        public String getNombre() {
-            return nombre;
-        }
-
-        public void setNombre(String nombre) {
-            this.nombre = nombre;
-        }
-
-        public LocalDateTime getFechaInicio() {
-            return fechaInicio;
-        }
-
-        public void setFechaInicio(LocalDateTime fechaInicio) {
-            this.fechaInicio = fechaInicio;
-        }
-
-        public LocalDateTime getFechaCompletado() {
-            return fechaCompletado;
-        }
-
-        public void setFechaCompletado(LocalDateTime fechaCompletado) {
-            this.fechaCompletado = fechaCompletado;
-        }
-
-        public boolean isCompletado() {
-            return completado;
-        }
-
-        public void setCompletado(boolean completado) {
-            this.completado = completado;
-            if (completado && fechaCompletado == null) {
-                this.fechaCompletado = LocalDateTime.now();
-            }
-        }
-
-        public int getProgreso() {
-            return progreso;
-        }
-
-        public void setProgreso(int progreso) {
-            this.progreso = progreso;
-        }
-
-        public List<String> getActividadesCompletadas() {
-            return actividadesCompletadas;
-        }
-
-        public void setActividadesCompletadas(List<String> actividadesCompletadas) {
-            this.actividadesCompletadas = actividadesCompletadas;
         }
     }
 
@@ -349,51 +160,41 @@ public class Usuario {
     }
 
     public void setFechaRegistro(LocalDateTime fechaRegistro) {
-        this.fechaRegistro = fechaRegistro;
+            this.fechaRegistro = fechaRegistro;
     }
 
-    public MecanicaJuego getMecanicaJuego() {
-        return mecanicaJuego;
+    public List<String> getProyectosParticipadosIds() {
+        return proyectosParticipadosIds;
     }
 
-    public void setMecanicaJuego(MecanicaJuego mecanicaJuego) {
-        this.mecanicaJuego = mecanicaJuego;
+    public void setProyectosParticipadosIds(List<String> proyectosParticipadosIds) {
+        this.proyectosParticipadosIds = proyectosParticipadosIds;
     }
 
-    public List<ProyectoResumen> getProyectosActivos() {
-        return proyectosActivos;
+    public void agregarProyectoParticipado(String proyectoId) {
+        if (!proyectosParticipadosIds.contains(proyectoId)) {
+            proyectosParticipadosIds.add(proyectoId);
+            // Invalidar cache cuando se modifica la participación
+            cacheEstadisticas.clear();
+        }
     }
 
-    public void setProyectosActivos(List<ProyectoResumen> proyectosActivos) {
-        this.proyectosActivos = proyectosActivos;
+    public void eliminarProyectoParticipado(String proyectoId) {
+        if (proyectosParticipadosIds.remove(proyectoId)) {
+            // Invalidar cache cuando se modifica la participación
+            cacheEstadisticas.clear();
+        }
     }
 
-    public List<DesafioUsuario> getDesafios() {
-        return desafios;
+    public boolean estaParticipandoEnProyecto(String proyectoId) {
+        return proyectosParticipadosIds.contains(proyectoId);
     }
-
-    public void setDesafios(List<DesafioUsuario> desafios) {
-        this.desafios = desafios;
+    
+    public void actualizarCacheEstadisticas(String key, Object value) {
+        cacheEstadisticas.put(key, value);
     }
-
-    // Métodos de utilidad
-    public void agregarProyecto(ProyectoResumen proyecto) {
-        this.proyectosActivos.add(proyecto);
-    }
-
-    public void agregarDesafio(DesafioUsuario desafio) {
-        this.desafios.add(desafio);
-    }
-
-    public void actualizarProgreso(String desafioId, int progreso) {
-        this.desafios.stream()
-            .filter(d -> d.getDesafioId().equals(desafioId))
-            .findFirst()
-            .ifPresent(d -> {
-                d.setProgreso(progreso);
-                if (progreso >= 100) {
-                    d.setCompletado(true);
-                }
-            });
+    
+    public Object obtenerCacheEstadisticas(String key) {
+        return cacheEstadisticas.get(key);
     }
 }

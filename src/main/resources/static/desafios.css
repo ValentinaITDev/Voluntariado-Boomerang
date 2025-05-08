@@ -1,0 +1,381 @@
+/**
+ * Estilos para la gestión de desafíos en Boomerang
+ */
+
+.challenge-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    position: relative;
+    overflow: hidden;
+}
+
+.challenge-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.challenge-card.pendiente {
+    border-left: 5px solid #ffcc00;
+}
+
+.challenge-card.activo {
+    border-left: 5px solid #44bb77;
+}
+
+.challenge-card.finalizado {
+    border-left: 5px solid #aaaaaa;
+    opacity: 0.8;
+}
+
+.challenge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.challenge-points {
+    background: #5599ff;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.challenge-dates, .challenge-type, .challenge-project, .challenge-estado {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.challenge-dates i, .challenge-type i, .challenge-project i, .challenge-estado i {
+    margin-right: 8px;
+    color: #5599ff;
+}
+
+.date-item {
+    margin-right: 15px;
+}
+
+.challenge-progress {
+    margin: 15px 0;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress {
+    height: 100%;
+    background: #5599ff;
+    transition: width 0.3s ease;
+}
+
+.project-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    margin-left: 5px;
+}
+
+.action-btn:hover {
+    background: #f0f0f0;
+}
+
+.action-btn.view-btn:hover {
+    color: #5599ff;
+}
+
+.action-btn.edit-btn:hover {
+    color: #ffaa00;
+}
+
+.action-btn.delete-btn:hover {
+    color: #ff5555;
+}
+
+/* Estilos para el formulario de desafíos */
+.challenge-form-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.challenge-form-content {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 30px;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.challenge-form-content h2 {
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.challenge-form-content h2 i {
+    color: #5599ff;
+}
+
+.challenge-form .form-group {
+    margin-bottom: 20px;
+}
+
+.challenge-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+
+.challenge-form input,
+.challenge-form select,
+.challenge-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 15px;
+    transition: border-color 0.3s ease;
+}
+
+.challenge-form input:focus,
+.challenge-form select:focus,
+.challenge-form textarea:focus {
+    border-color: #5599ff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(85, 153, 255, 0.2);
+}
+
+.challenge-form textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.challenge-form .date-inputs {
+    display: flex;
+    gap: 20px;
+}
+
+.challenge-form .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.challenge-form .submit-btn,
+.challenge-form .cancel-btn {
+    padding: 12px 25px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.challenge-form .submit-btn {
+    background: #4caf50;
+    color: white;
+}
+
+.challenge-form .cancel-btn {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.challenge-form .submit-btn:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.challenge-form .cancel-btn:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+.challenge-form .submit-btn:active,
+.challenge-form .cancel-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Estilos para el botón de nuevo desafío */
+.add-challenge-btn {
+    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(76,175,80,0.3);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.add-challenge-btn .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.2);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.add-challenge-btn .btn-text {
+    position: relative;
+    z-index: 2;
+    letter-spacing: 0.5px;
+    font-size: 15px;
+}
+
+.add-challenge-btn .btn-hover-effect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+.add-challenge-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(76,175,80,0.4);
+}
+
+.add-challenge-btn:hover .btn-hover-effect {
+    opacity: 1;
+}
+
+.add-challenge-btn:hover .btn-icon {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+.add-challenge-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 8px rgba(76,175,80,0.2);
+}
+
+/* Notificaciones mejoradas */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10001;
+    padding: 15px 25px;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    max-width: 450px;
+    animation: slideIn 0.3s ease forwards;
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #55cc55 0%, #3ab53a 100%);
+    color: white;
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #ff5555 0%, #e03c3c 100%);
+    color: white;
+}
+
+.notification.info {
+    background: linear-gradient(135deg, #5599ff 0%, #3a7ce0 100%);
+    color: white;
+}
+
+.notification.warning {
+    background: linear-gradient(135deg, #ffaa55 0%, #e08f3a 100%);
+    color: white;
+}
+
+.notification span {
+    flex: 1;
+}
+
+.notification button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.notification button:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+} 

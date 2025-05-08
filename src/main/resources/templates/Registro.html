@@ -3,23 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - VolunteerHub</title>
-    <link rel="stylesheet" href="/styles.css">
+    <title>Voluntariado Boomerang - Registro</title>
+    <link rel="stylesheet" href="/Styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <nav class="navbar">
-        <div class="logo">VolunteerHub</div>
-        <ul class="nav-links">
-            <li><a href="/">Inicio</a></li>
-            <li><a href="/login">Iniciar Sesión</a></li>
-            <li><a href="/registro" class="active">Registro</a></li>
-        </ul>
+        <div class="nav-container">
+            <div class="logo">
+                <img src="/images/logo.png" alt="Boomerang Voluntariado" class="logo-img">
+            </div>
+            <ul class="nav-links">
+                <li><a href="/"><i class="fa-solid fa-house" style="color: #1c5b99"></i>
+                        Inicio</a></li>
+                <li><a href="/login"><i class="fa-solid fa-right-to-bracket" style="color: #1c5b99"></i>
+                        Inicio Sesión</a></li>
+                <li><a href="/registro"><i class="fa-solid fa-user-plus" style="color: #1c5b99"></i>
+                        Registrarse</a></li>
+            </ul>
+        </div>
     </nav>
 
-    <div class="registration-container">
-        <div class="registration-card">
-            <h2><i class="fas fa-user-plus"></i> Registro de Voluntario</h2>
+    <div class="Formulario">
+        <div class="Formulariocontenido">
+            <img src="/images/IconoRegistro.png" alt="User" class="imagen-predeterminada">
+            <h2>Registro</h2>
             
             <!-- Mensaje de error si hay alguno -->
             <div class="alert alert-danger" th:if="${error != null}">
@@ -42,16 +50,17 @@
                     <i class="fas fa-phone"></i>
                     <input type="tel" placeholder="Teléfono" th:field="*{numero}" required>
                 </div>
+                <div class="form-group">
+                    <i class="fas fa-building"></i>
+                    <input type="text" placeholder="Empresa u organización" th:field="*{empresa}" required>
+                </div>
                 
                 <div class="form-group">
                     <i class="fas fa-lock"></i>
                     <input type="password" placeholder="Contraseña" th:field="*{password}" required>
                 </div>
 
-                <div class="form-group">
-                    <i class="fas fa-building"></i>
-                    <input type="text" placeholder="Empresa u organización" th:field="*{empresa}" required>
-                </div>
+                
 
                 <button type="submit" class="submit-btn">
                     <span>Registrarse</span>
@@ -64,5 +73,25 @@
             </div>
         </div>
     </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Contacto</h4>
+                <p>Email: trasovoluntariado@gmail.com</p>
+                <p>Teléfono: (605) 456-7890</p>
+            </div>
+            <div class="footer-section">
+                <h4>Síguenos</h4>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Boomerang Voluntariado. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 </html>

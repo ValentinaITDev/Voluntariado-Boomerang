@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión General - VolunteerHub Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- Variables CSS Globales --- */
+        :root {
+            --primary-color: #3498db;    /* Azul principal */
+            --secondary-color: #2980b9; /* Azul más oscuro */
+            --danger-color: #e74c3c;     /* Rojo para peligro/eliminar */
+            --success-color: #2ecc71;    /* Verde para éxito */
+            --warning-color: #f39c12;    /* Naranja para advertencia */
+            --info-color: #3498db;       /* Azul para información */
+            --light-color: #f5f6fa;     /* Color de fondo claro */
+            --dark-color: #34495e;      /* Color oscuro para texto/elementos */
+            --text-color: #333;         /* Color principal del texto */
+            --text-secondary-color: #777; /* Color de texto secundario */
+            --border-color: #ddd;       /* Color de borde */
+            --border-radius: 8px;       /* Radio de borde */
+            --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra de caja */
+            --transition: all 0.3s ease; /* Transición suave */
+        }
+
+        /* --- Estilos Base --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; color: var(--text-color); line-height: 1.6; }
+        a { text-decoration: none; color: var(--primary-color); transition: var(--transition); }
+        a:hover { color: var(--secondary-color); }
+        button { cursor: pointer; transition: var(--transition); }
+        input, textarea, select { font-family: inherit; font-size: 1rem; padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 4px; transition: var(--transition); }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2); }
+        textarea { resize: vertical; min-height: 80px; }
+
+        /* --- Barra de Navegación --- */
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 2rem; background-color: #fff; box-shadow: var(--box-shadow); position: sticky; top: 0; z-index: 1000; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); display: flex; align-items: center; }
+        .logo::before { content: "\f0c0"; font-family: "Font Awesome 6 Free"; font-weight: 900; margin-right: 10px; color: var(--primary-color); }
+        .nav-links { display: flex; list-style: none; }
+        .nav-links li { margin-left: 1.5rem; }
+        .nav-links a { color: var(--dark-color); text-decoration: none; padding: 0.5rem 0.8rem; border-radius: var(--border-radius); transition: var(--transition); font-weight: 500; }
+        .nav-links a:hover { background-color: rgba(52, 152, 219, 0.1); color: var(--primary-color); }
+        .nav-links a.active { background-color: var(--primary-color); color: white; }
+
+        /* --- Contenedor Principal Admin --- */
+        .admin-container { max-width: 1300px; margin: 2rem auto; padding: 0 1rem; }
+
+        /* --- Estructura de Pestañas --- */
+        .tabs-container { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 1.5rem; overflow-x: auto; }
+        .tab-btn { background: none; border: none; padding: 0.8rem 1.5rem; font-size: 1.1rem; font-weight: 500; color: var(--text-secondary-color); cursor: pointer; border-bottom: 3px solid transparent; transition: var(--transition); display: inline-flex; align-items: center; gap: 0.5rem; white-space: nowrap; }
+        .tab-btn i { font-size: 1rem; }
+        .tab-btn:hover { color: var(--primary-color); }
+        .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: 600; }
+        .tab-content { display: none; animation: fadeIn 0.5s ease; }
+        .tab-content.active { display: block; }
+
+        /* --- Barra de Acciones (Botón Añadir, Búsqueda, Filtros) --- */
+        .action-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; background-color: white; padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--box-shadow); }
+        .action-bar .left-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .action-bar .right-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .primary-btn { background-color: var(--primary-color); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-size: 0.95rem; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .primary-btn:hover { background-color: var(--secondary-color); }
+        .search-filter-container { display: flex; gap: 0.5rem; position: relative; flex-grow: 1; max-width: 350px; }
+        .search-filter-container input[type="text"] { padding-right: 2.5rem; width: 100%; } /* Espacio para el icono */
+        .search-filter-container .search-icon { position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary-color); font-size: 1rem; }
+        .filter-select { padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 4px; background-color: white; min-width: 150px; }
+
+        /* --- Grid para Proyectos/Usuarios --- */
+        .data-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+
+        /* --- Tarjeta de Proyecto --- */
+        .project-card { background-color: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); overflow: hidden; display: flex; flex-direction: column; transition: var(--transition); position: relative; }
+        .project-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15); }
+        .project-image { height: 180px; background-color: var(--light-color); overflow: hidden; position: relative; }
+        .project-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+        .project-card:hover .project-image img { transform: scale(1.05); }
+        .project-status-badge { position: absolute; top: 0.8rem; left: 0.8rem; padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: white; z-index: 2; }
+        .status-active { background-color: var(--success-color); }
+        .status-draft { background-color: var(--warning-color); }
+        .status-completed { background-color: var(--secondary-color); }
+        .status-archived { background-color: #7f8c8d; } /* Gris */
+        .project-visibility-badge { position: absolute; top: 0.8rem; right: 0.8rem; padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: white; background-color: rgba(0,0,0,0.5); z-index: 2; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .visibility-public { background-color: var(--info-color); }
+        .visibility-company { background-color: var(--dark-color); }
+
+        .project-content { padding: 1.2rem; flex-grow: 1; display: flex; flex-direction: column; }
+        .project-content h3 { font-size: 1.2rem; color: var(--dark-color); margin-bottom: 0.5rem; }
+        .project-content .description { font-size: 0.9rem; color: var(--text-secondary-color); margin-bottom: 1rem; flex-grow: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; } /* Limitar descripción a 3 líneas */
+        .project-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-secondary-color); border-top: 1px solid #eee; padding-top: 0.8rem; gap: 1rem; }
+        .project-meta span { display: inline-flex; align-items: center; gap: 0.3rem; }
+        .project-actions-container { position: absolute; bottom: 0.8rem; right: 0.8rem; z-index: 3; }
+        .project-action-btn { background: rgba(255, 255, 255, 0.8); border: 1px solid var(--border-color); color: var(--dark-color); width: 35px; height: 35px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .project-action-btn:hover { background: white; color: var(--primary-color); }
+
+        /* --- Tarjeta de Usuario --- */
+        .user-card { background-color: white; border-radius: var(--border-radius); box-shadow: var(--box-shadow); padding: 1.2rem; display: flex; align-items: center; gap: 1rem; transition: var(--transition); position: relative; }
+        .user-card:hover { transform: translateY(-3px); box-shadow: 0 5px 12px rgba(0, 0, 0, 0.12); }
+        .user-avatar { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background-color: var(--light-color); }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-info { flex-grow: 1; }
+        .user-info h4 { font-size: 1.1rem; color: var(--dark-color); margin-bottom: 0.1rem; }
+        .user-info .email { font-size: 0.9rem; color: var(--text-secondary-color); margin-bottom: 0.3rem; word-break: break-all; }
+        .user-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; font-size: 0.8rem; }
+        .user-badge { padding: 0.2rem 0.6rem; border-radius: 15px; color: white; font-weight: 500; }
+        .badge-role-admin { background-color: var(--primary-color); }
+        .badge-role-volunteer { background-color: var(--success-color); }
+        .badge-status-active { background-color: var(--success-color); }
+        .badge-status-inactive { background-color: var(--text-secondary-color); }
+        .badge-company { background-color: var(--dark-color); }
+        .user-actions-container { position: absolute; top: 0.8rem; right: 0.8rem; }
+
+        /* --- Modal General --- */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 2000; opacity: 0; transition: opacity 0.3s ease; padding: 1rem; overflow-y: auto; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background-color: white; border-radius: var(--border-radius); width: 90%; max-width: 700px; /* Ancho modal proyecto */ max-height: 90vh; display: flex; flex-direction: column; animation: scaleIn 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; /* Para botón cerrar */ }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); background-color: var(--light-color); }
+        .modal-header h2 { font-size: 1.4rem; color: var(--dark-color); margin: 0; display: flex; align-items: center; gap: 0.6rem; }
+        .modal-close-btn { background: transparent; border: none; font-size: 1.8rem; cursor: pointer; color: var(--text-secondary-color); transition: var(--transition); padding: 0.2rem; line-height: 1; }
+        .modal-close-btn:hover { color: var(--danger-color); transform: rotate(90deg); }
+        .modal-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
+        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background-color: var(--light-color); display: flex; justify-content: flex-end; gap: 0.8rem; }
+        .cancel-btn { background-color: #eee; color: #555; border: 1px solid var(--border-color); padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: 500; }
+        .cancel-btn:hover { background-color: #ddd; }
+        .submit-btn { background-color: var(--success-color); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .submit-btn:hover { background-color: #27ae60; } /* Verde más oscuro */
+
+        /* --- Estilos de Formulario (dentro del modal) --- */
+        .modal-form .form-group { margin-bottom: 1.2rem; }
+        .modal-form label { display: block; font-weight: 600; color: var(--dark-color); margin-bottom: 0.4rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem; }
+        .modal-form input[type="text"], .modal-form input[type="number"], .modal-form input[type="datetime-local"], .modal-form textarea, .modal-form select { width: 100%; }
+        .form-group.checkbox-group { margin-top: 1rem; }
+        .checkbox-container { display: flex; align-items: center; cursor: pointer; user-select: none; }
+        .checkbox-container input[type="checkbox"] { opacity: 0; width: 0; height: 0; }
+        .checkmark { position: relative; height: 20px; width: 20px; background-color: #eee; border: 1px solid var(--border-color); border-radius: 3px; margin-right: 0.8rem; transition: var(--transition); }
+        .checkbox-container:hover .checkmark { background-color: #ccc; }
+        .checkbox-container input:checked ~ .checkmark { background-color: var(--primary-color); border-color: var(--primary-color); }
+        .checkmark:after { content: ""; position: absolute; display: none; left: 6px; top: 2px; width: 5px; height: 10px; border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+        .checkbox-container input:checked ~ .checkmark:after { display: block; }
+        .checkbox-label { font-size: 0.95rem; color: var(--text-color); }
+        /* Radio Buttons para Visibilidad */
+        .visibility-options { display: flex; gap: 1.5rem; margin-top: 0.5rem; }
+        .radio-container { display: flex; align-items: center; cursor: pointer; }
+        .radio-container input[type="radio"] { opacity: 0; width: 0; height: 0; }
+        .radio-checkmark { position: relative; height: 20px; width: 20px; background-color: #eee; border: 1px solid var(--border-color); border-radius: 50%; margin-right: 0.5rem; transition: var(--transition); }
+        .radio-container:hover .radio-checkmark { background-color: #ccc; }
+        .radio-container input:checked ~ .radio-checkmark { background-color: var(--primary-color); border-color: var(--primary-color); }
+        .radio-checkmark:after { content: ""; position: absolute; display: none; top: 5px; left: 5px; width: 8px; height: 8px; border-radius: 50%; background: white; }
+        .radio-container input:checked ~ .radio-checkmark:after { display: block; }
+        .radio-label { font-size: 0.95rem; }
+        #companySpecificInputContainer { margin-top: 0.8rem; display: none; /* Oculto por defecto */ animation: fadeIn 0.3s ease; }
+
+        /* Estilos Carga de Imagen (del ejemplo) */
+        .image-upload-container { border: 2px dashed var(--border-color); border-radius: var(--border-radius); padding: 20px; text-align: center; margin-bottom: 15px; transition: all 0.3s ease; }
+        .image-upload-container.drag-over { border-color: var(--success-color); background-color: rgba(46, 204, 113, 0.05); }
+        .image-upload-container .upload-label { display: block; cursor: pointer; padding: 15px; color: var(--text-secondary-color); }
+        .image-upload-container .upload-label i { font-size: 2.5rem; color: var(--primary-color); margin-bottom: 10px; display: block; }
+        .image-upload-container input[type="file"] { display: none; }
+        .image-preview { margin-top: 15px; text-align: center; }
+        .image-preview img { max-width: 100%; max-height: 180px; border-radius: var(--border-radius); box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
+
+        /* --- Modal Participantes --- */
+        #participantsModal .modal-content { max-width: 800px; } /* Más ancho */
+        .participants-search { margin-bottom: 1rem; position: relative; }
+        .participants-search input { width: 100%; padding-left: 2.5rem; }
+        .participants-search .search-icon { position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary-color); }
+        .participants-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+        .participant-card { text-align: center; background-color: var(--light-color); padding: 1rem; border-radius: var(--border-radius); }
+        .participant-avatar { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 0.5rem auto; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .participant-card h4 { font-size: 1rem; color: var(--dark-color); margin-bottom: 0.2rem; }
+        .participant-card p { font-size: 0.85rem; color: var(--text-secondary-color); margin-bottom: 0.5rem; }
+        .participant-card .hours { font-size: 0.8rem; color: var(--primary-color); font-weight: 500; }
+
+        /* --- Menú de Acciones (Dropdown - del ejemplo) --- */
+        .actions-menu-container { position: relative; } /* Contenedor para el botón y el menú */
+        .actions-menu { position: absolute; top: calc(100% + 5px); /* Debajo del botón */ right: 0; background: white; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.2); padding: 0.5rem; display: none; z-index: 10; min-width: 180px; animation: fadeIn 0.2s ease; }
+        .actions-menu.active { display: block; }
+        .actions-menu button, .actions-menu a { display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 1rem; width: 100%; border: none; background: none; color: var(--text-color); cursor: pointer; transition: all 0.2s ease; border-radius: 4px; text-align: left; font-size: 0.9rem; }
+        .actions-menu button:hover, .actions-menu a:hover { background: #f5f5f5; color: var(--primary-color); }
+        .actions-menu .delete-action { color: var(--danger-color); }
+        .actions-menu .delete-action:hover { color: var(--danger-color); background: rgba(231, 76, 60, 0.1); }
+        .actions-menu hr { margin: 0.4rem 0; border: none; border-top: 1px solid #eee; }
+
+        /* --- Estilos para mensajes de error y carga (del ejemplo) --- */
+        .error-message { background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: var(--border-radius); padding: 1rem; margin-top: 10px; color: #721c24; display: flex; align-items: center; gap: 0.8rem; font-size: 0.9rem; }
+        .error-message i { font-size: 1.2rem; }
+        .loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 15px; min-height: 150px; }
+        .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .no-data-message { text-align: center; padding: 3rem; color: var(--text-secondary-color); background-color: white; border-radius: var(--border-radius); border: 1px dashed var(--border-color); }
+        .no-data-message i { font-size: 2rem; display: block; margin-bottom: 1rem; color: var(--text-secondary-color); }
+
+        /* --- Animaciones --- */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* --- Responsividad --- */
+        @media (max-width: 768px) {
+            .navbar { padding: 0.7rem 1rem; flex-direction: column; align-items: flex-start; }
+            .nav-links { margin-top: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+            .nav-links li { margin-left: 0; }
+            .admin-container { margin: 1rem auto; padding: 0 0.5rem; }
+            .action-bar { flex-direction: column; align-items: stretch; }
+            .action-bar .left-actions, .action-bar .right-actions { width: 100%; justify-content: space-between; }
+            .search-filter-container { max-width: none; }
+            .data-grid { grid-template-columns: 1fr; } /* Una columna */
+            .modal-content { width: 95%; }
+            .modal-form .visibility-options { flex-direction: column; gap: 0.8rem; align-items: flex-start;}
+            .participants-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">VolunteerHub Admin</div>
+        <ul class="nav-links">
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#" class="active">Gestión</a></li> <li><a href="#">Foros</a></li>
+            <li><a href="#">Reportes</a></li>
+            <li><a href="#">Configuración</a></li>
+            <li><a href="#">Cerrar Sesión</a></li>
+        </ul>
+    </nav>
+
+    <div class="admin-container">
+
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="openTab(event, 'projectsTab')">
+                <i class="fas fa-project-diagram"></i> Proyectos
+            </button>
+            <button class="tab-btn" onclick="openTab(event, 'usersTab')">
+                <i class="fas fa-users"></i> Usuarios
+            </button>
+            <button class="tab-btn" onclick="openTab(event, 'challengesTab')">
+                <i class="fas fa-trophy"></i> Desafíos
+             </button>
+             <button class="tab-btn" onclick="openTab(event, 'settingsTab')">
+                 <i class="fas fa-cog"></i> Configuración
+              </button>
+        </div>
+
+        <div id="projectsTab" class="tab-content active">
+            <div class="action-bar">
+                <div class="left-actions">
+                    <button class="primary-btn" onclick="openProjectModal()">
+                        <i class="fas fa-plus"></i> Nuevo Proyecto
+                    </button>
+                </div>
+                <div class="right-actions">
+                    <div class="search-filter-container">
+                        <input type="text" id="projectSearchInput" placeholder="Buscar por nombre...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <select id="projectStatusFilter" class="filter-select">
+                        <option value="">Todos los Estados</option>
+                        <option value="DRAFT">Borrador</option>
+                        <option value="ACTIVE">Activo</option>
+                        <option value="COMPLETED">Completado</option>
+                        <option value="ARCHIVED">Archivado</option>
+                    </select>
+                     <select id="projectVisibilityFilter" class="filter-select">
+                         <option value="">Toda Visibilidad</option>
+                         <option value="PUBLIC">Público</option>
+                         <option value="COMPANY">Empresa Específica</option>
+                     </select>
+                </div>
+            </div>
+
+            <div id="projectsGrid" class="data-grid">
+                <div class="loading-container" id="projectsLoader" style="grid-column: 1 / -1;">
+                    <div class="loading-spinner"></div>
+                    <p>Cargando proyectos...</p>
+                </div>
+
+                <div class="no-data-message" id="noProjectsMessage" style="display: none; grid-column: 1 / -1;">
+                     <i class="fas fa-folder-open"></i>
+                     <p>No se encontraron proyectos. ¡Crea el primero!</p>
+                 </div>
+
+                </div>
+            <div class="pagination" id="projectsPagination" style="display: none;"></div>
+        </div>
+
+        <div id="usersTab" class="tab-content">
+            <div class="action-bar">
+                <div class="left-actions">
+                    </div>
+                <div class="right-actions">
+                    <div class="search-filter-container">
+                        <input type="text" id="userSearchInput" placeholder="Buscar por nombre o email...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <select id="userRoleFilter" class="filter-select">
+                        <option value="">Todos los Roles</option>
+                        <option value="ADMIN">Administrador</option>
+                        <option value="VOLUNTEER">Voluntario</option>
+                    </select>
+                     <select id="userStatusFilter" class="filter-select">
+                         <option value="">Todos los Estados</option>
+                         <option value="ACTIVE">Activo</option>
+                         <option value="INACTIVE">Inactivo</option>
+                     </select>
+                     <select id="userCompanyFilter" class="filter-select">
+                          <option value="">Todas las Empresas</option>
+                          <option value="TechCorp Inc.">TechCorp Inc.</option>
+                           <option value="Global Aid Org">Global Aid Org</option>
+                     </select>
+                </div>
+            </div>
+
+            <div id="usersGrid" class="data-grid">
+                <div class="loading-container" id="usersLoader" style="grid-column: 1 / -1;">
+                     <div class="loading-spinner"></div>
+                     <p>Cargando usuarios...</p>
+                </div>
+                <div class="no-data-message" id="noUsersMessage" style="display: none; grid-column: 1 / -1;">
+                     <i class="fas fa-user-slash"></i>
+                     <p>No se encontraron usuarios.</p>
+                 </div>
+
+                </div>
+             <div class="pagination" id="usersPagination" style="display: none;"></div>
+        </div>
+
+         <div id="challengesTab" class="tab-content">
+             <div class="action-bar">
+                 <button class="primary-btn" onclick="/* Lógica para abrir modal de nuevo desafío */">
+                     <i class="fas fa-plus"></i> Nuevo Desafío
+                 </button>
+             </div>
+             <div class="no-data-message">
+                  <i class="fas fa-trophy"></i>
+                  <p>La gestión de desafíos se encuentra en desarrollo.</p>
+              </div>
+         </div>
+
+          <div id="settingsTab" class="tab-content">
+               <div class="no-data-message">
+                   <i class="fas fa-cogs"></i>
+                   <p>La sección de configuración estará disponible próximamente.</p>
+               </div>
+          </div>
+
+    </div> <div id="projectFormModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="projectModalTitle"><i class="fas fa-project-diagram"></i> Crear Nuevo Proyecto</h2>
+                <button class="modal-close-btn" onclick="closeProjectModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="projectForm" class="modal-form modal-body">
+                 <input type="hidden" id="projectId"> <div class="form-group">
+                     <label for="projectName"><i class="fas fa-heading"></i> Nombre del Proyecto</label>
+                     <input type="text" id="projectName" required placeholder="Ej: Limpieza Parque Central">
+                 </div>
+
+                 <div class="form-group">
+                     <label for="projectDescription"><i class="fas fa-align-left"></i> Descripción</label>
+                     <textarea id="projectDescription" required placeholder="Describe los objetivos y actividades del proyecto..."></textarea>
+                 </div>
+
+                 <div class="form-group">
+                     <label for="projectImageInput"><i class="fas fa-image"></i> Imagen del Proyecto</label>
+                     <div class="image-upload-container" id="imageUploadArea">
+                         <input type="file" id="projectImageInput" accept="image/*">
+                         <label for="projectImageInput" class="upload-label">
+                             <i class="fas fa-cloud-upload-alt"></i>
+                             <span>Arrastra tu imagen aquí o haz clic para seleccionar</span>
+                         </label>
+                         <div class="image-preview" id="imagePreview">
+                             <img id="previewImg" src="" alt="Vista previa" style="display: none;">
+                         </div>
+                     </div>
+                 </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="form-group">
+                        <label for="projectExpirationDate"><i class="fas fa-calendar-alt"></i> Fecha de Expiración (Opcional)</label>
+                        <input type="datetime-local" id="projectExpirationDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="projectParticipantsLimit"><i class="fas fa-users"></i> Límite de Participantes (0=sin límite)</label>
+                        <input type="number" id="projectParticipantsLimit" min="0" value="0" placeholder="Número máximo">
+                    </div>
+                </div>
+
+                 <div class="form-group">
+                     <label><i class="fas fa-eye"></i> Visibilidad del Proyecto</label>
+                     <div class="visibility-options">
+                         <label class="radio-container">
+                             <input type="radio" name="projectVisibility" value="PUBLIC" checked onchange="toggleCompanyInput()">
+                             <span class="radio-checkmark"></span>
+                             <span class="radio-label"><i class="fas fa-globe-americas"></i> Público (Abierto a todos)</span>
+                         </label>
+                         <label class="radio-container">
+                             <input type="radio" name="projectVisibility" value="COMPANY" onchange="toggleCompanyInput()">
+                             <span class="radio-checkmark"></span>
+                             <span class="radio-label"><i class="fas fa-building"></i> Empresa Específica</span>
+                         </label>
+                     </div>
+                     <div id="companySpecificInputContainer" class="form-group">
+                         <label for="projectCompany"><i class="fas fa-building"></i> Nombre de la Empresa</label>
+                         <input type="text" id="projectCompany" placeholder="Ingrese el nombre de la empresa">
+                         </div>
+                 </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="createForumCheckbox" checked>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Crear foro automáticamente para este proyecto</span>
+                    </label>
+                </div>
+
+                 <div class="error-message" id="projectFormError" style="display: none;"></div>
+
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="cancel-btn" onclick="closeProjectModal()">Cancelar</button>
+                <button type="button" id="saveProjectBtn" class="submit-btn" onclick="saveProject()">
+                     <i class="fas fa-save"></i> Guardar Proyecto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="participantsModal" class="modal">
+        <div class="modal-content">
+             <div class="modal-header">
+                <h2 id="participantsModalTitle"><i class="fas fa-users"></i> Participantes</h2>
+                <button class="modal-close-btn" onclick="closeParticipantsModal()"><i class="fas fa-times"></i></button>
+            </div>
+             <div class="modal-body">
+                <div class="participants-search">
+                     <input type="text" id="participantSearchInput" placeholder="Buscar participante...">
+                     <i class="fas fa-search search-icon"></i>
+                 </div>
+                 <div class="participants-grid" id="participantsGrid">
+                     <div class="loading-container" id="participantsLoader" style="grid-column: 1 / -1;">
+                         <div class="loading-spinner"></div>
+                         <p>Cargando participantes...</p>
+                     </div>
+                     <div class="no-data-message" id="noParticipantsMessage" style="display: none; grid-column: 1 / -1;">
+                          <i class="fas fa-user-slash"></i>
+                          <p>Aún no hay participantes en este proyecto.</p>
+                      </div>
+                     </div>
+             </div>
+              <div class="modal-footer">
+                 <button type="button" class="cancel-btn" onclick="closeParticipantsModal()">Cerrar</button>
+             </div>
+        </div>
+    </div>
+
+     <div id="confirmActionModal" class="modal">
+          <div class="modal-content" style="max-width: 450px;"> <div class="modal-header">
+                 <h2 id="confirmModalTitle"><i class="fas fa-exclamation-triangle"></i> Confirmar Acción</h2>
+                 <button class="modal-close-btn" onclick="closeConfirmModal()"><i class="fas fa-times"></i></button>
+             </div>
+             <div class="modal-body">
+                 <p id="confirmModalMessage">¿Estás seguro de que deseas realizar esta acción?</p>
+             </div>
+             <div class="modal-footer">
+                  <button type="button" class="cancel-btn" onclick="closeConfirmModal()">Cancelar</button>
+                 <button type="button" id="confirmModalButton" class="submit-btn danger">Confirmar</button> </div>
+         </div>
+     </div>
+
+     <div id="notificationContainer" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 3000; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+
+
+    <script>
+        // --- Lógica de Pestañas ---
+        function openTab(evt, tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+
+            // Cargar datos si es la primera vez que se abre la pestaña (o si se necesita refrescar)
+            if (tabId === 'projectsTab' && !document.getElementById('projectsGrid').hasChildNodes()) { loadProjects(); }
+            if (tabId === 'usersTab' && !document.getElementById('usersGrid').hasChildNodes()) { loadUsers(); }
+            // Añadir lógica similar para otras pestañas si es necesario
+        }
+
+        // --- Lógica Modal Proyectos ---
+        const projectFormModal = document.getElementById('projectFormModal');
+        const projectForm = document.getElementById('projectForm');
+        const projectModalTitle = document.getElementById('projectModalTitle');
+        const projectIdInput = document.getElementById('projectId');
+        const saveProjectBtn = document.getElementById('saveProjectBtn');
+
+        function openProjectModal(projectData = null) {
+            projectForm.reset(); // Limpiar formulario
+            document.getElementById('imagePreview').innerHTML = '<img id="previewImg" src="" alt="Vista previa" style="display: none;">'; // Reset preview
+            document.getElementById('projectFormError').style.display = 'none'; // Ocultar errores previos
+            toggleCompanyInput(true); // Asegurarse que campo empresa esté oculto al inicio (si es público)
+
+            if (projectData) { // Modo Edición
+                projectModalTitle.innerHTML = '<i class="fas fa-edit"></i> Editar Proyecto';
+                projectIdInput.value = projectData.id;
+                document.getElementById('projectName').value = projectData.name;
+                document.getElementById('projectDescription').value = projectData.description;
+                document.getElementById('projectExpirationDate').value = projectData.expirationDate || '';
+                document.getElementById('projectParticipantsLimit').value = projectData.limit || 0;
+                document.getElementById('createForumCheckbox').checked = projectData.hasForum; // Asumiendo que tienes esta propiedad
+
+                // Visibilidad
+                if (projectData.visibility === 'COMPANY') {
+                    document.querySelector('input[name="projectVisibility"][value="COMPANY"]').checked = true;
+                    document.getElementById('projectCompany').value = projectData.companyName || ''; // Asumiendo propiedad companyName
+                    toggleCompanyInput();
+                } else {
+                    document.querySelector('input[name="projectVisibility"][value="PUBLIC"]').checked = true;
+                    toggleCompanyInput();
+                }
+
+                // Mostrar imagen existente si hay
+                if (projectData.imageUrl) {
+                    const previewImg = document.getElementById('previewImg');
+                    previewImg.src = projectData.imageUrl;
+                    previewImg.style.display = 'block';
+                }
+
+            } else { // Modo Creación
+                projectModalTitle.innerHTML = '<i class="fas fa-plus"></i> Crear Nuevo Proyecto';
+                projectIdInput.value = ''; // Asegurarse que ID esté vacío
+            }
+            projectFormModal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Bloquear scroll del body
+        }
+
+        function closeProjectModal() {
+            projectFormModal.classList.remove('active');
+            document.body.style.overflow = ''; // Restaurar scroll
+        }
+
+        function toggleCompanyInput(isPublicChecked = null) {
+             const companyInputContainer = document.getElementById('companySpecificInputContainer');
+             const isCompanySelected = isPublicChecked === null ? document.querySelector('input[name="projectVisibility"][value="COMPANY"]').checked : !isPublicChecked;
+
+             if (isCompanySelected) {
+                 companyInputContainer.style.display = 'block';
+                 document.getElementById('projectCompany').required = true; // Hacer requerido si es visible
+             } else {
+                 companyInputContainer.style.display = 'none';
+                 document.getElementById('projectCompany').required = false; // No requerido si está oculto
+                 document.getElementById('projectCompany').value = ''; // Limpiar valor
+             }
+         }
+
+        function saveProject() {
+            console.log("Guardando proyecto...");
+             // 1. Validar formulario (HTML5 'required' ayuda, pero se puede añadir JS)
+             if (!projectForm.checkValidity()) {
+                 projectForm.reportValidity(); // Mostrar mensajes de error del navegador
+                 showNotification('danger', 'Error de Validación', 'Por favor, complete todos los campos requeridos.');
+                 return;
+             }
+             // 2. Obtener datos del formulario (incluyendo imagen y visibilidad)
+             const formData = new FormData(); // Usar FormData para incluir archivos
+             formData.append('id', document.getElementById('projectId').value);
+             formData.append('nombre', document.getElementById('projectName').value);
+             formData.append('descripcion', document.getElementById('projectDescription').value);
+             formData.append('expirationDate', document.getElementById('projectExpirationDate').value);
+             formData.append('participantsLimit', document.getElementById('projectParticipantsLimit').value);
+             formData.append('createForum', document.getElementById('createForumCheckbox').checked);
+             formData.append('visibility', document.querySelector('input[name="projectVisibility"]:checked').value);
+             if (formData.get('visibility') === 'COMPANY') {
+                 formData.append('companyName', document.getElementById('projectCompany').value);
+             }
+             const imageFile = document.getElementById('projectImageInput').files[0];
+             if (imageFile) {
+                 formData.append('imagen', imageFile); // El backend debe esperar un campo 'imagen'
+             }
+
+             const projectId = formData.get('id');
+             const method = projectId ? 'PUT' : 'POST'; // PUT para editar, POST para crear
+             const url = projectId ? `/api/admin/proyectos/${projectId}` : '/api/admin/proyectos';
+
+             // 3. Enviar datos al backend (Simulación)
+              console.log("Enviando:", Object.fromEntries(formData)); // No muestra el archivo, pero sí los otros campos
+              showNotification('info', 'Guardando...', 'Enviando datos del proyecto al servidor.');
+
+              // fetch(url, { method: method, body: formData }) // Descomentar para llamada real
+              //    .then(response => { if (!response.ok) throw new Error('Error al guardar'); return response.json(); })
+              //    .then(data => {
+              //        showNotification('success', 'Éxito', `Proyecto ${projectId ? 'actualizado' : 'creado'} correctamente.`);
+              //        closeProjectModal();
+              //        loadProjects(); // Recargar la lista de proyectos
+              //    })
+              //    .catch(error => {
+              //        console.error("Error guardando proyecto:", error);
+              //        document.getElementById('projectFormError').textContent = `Error: ${error.message}. Intente de nuevo.`;
+              //        document.getElementById('projectFormError').style.display = 'flex';
+              //        showNotification('danger', 'Error', 'No se pudo guardar el proyecto.');
+              //    });
+
+              // Simulación:
+              setTimeout(() => {
+                 showNotification('success', 'Éxito', `Proyecto ${projectId ? 'actualizado' : 'creado'} (simulado).`);
+                 closeProjectModal();
+                 loadProjects(); // Recargar lista
+             }, 1000);
+        }
+
+         // --- Lógica Carga de Imagen (Placeholder) ---
+         const imageInput = document.getElementById('projectImageInput');
+         const previewImg = document.getElementById('previewImg');
+         const imageUploadArea = document.getElementById('imageUploadArea');
+
+         if(imageInput && previewImg && imageUploadArea) {
+             imageInput.addEventListener('change', function(event) {
+                 const file = event.target.files[0];
+                 if (file && file.type.startsWith('image/')) {
+                     const reader = new FileReader();
+                     reader.onload = function(e) {
+                         previewImg.src = e.target.result;
+                         previewImg.style.display = 'block';
+                     }
+                     reader.readAsDataURL(file);
+                 } else {
+                     previewImg.src = '';
+                     previewImg.style.display = 'none';
+                     if(file) showNotification('warning', 'Archivo inválido', 'Por favor, seleccione un archivo de imagen.');
+                 }
+             });
+
+             // Efectos Drag & Drop (opcional)
+             imageUploadArea.addEventListener('dragover', (event) => {
+                 event.preventDefault();
+                 imageUploadArea.classList.add('drag-over');
+             });
+             imageUploadArea.addEventListener('dragleave', () => {
+                 imageUploadArea.classList.remove('drag-over');
+             });
+             imageUploadArea.addEventListener('drop', (event) => {
+                 event.preventDefault();
+                 imageUploadArea.classList.remove('drag-over');
+                 const files = event.dataTransfer.files;
+                 if (files.length > 0) {
+                     imageInput.files = files; // Asignar archivo al input
+                     // Disparar evento 'change' manualmente para actualizar preview
+                     const changeEvent = new Event('change');
+                     imageInput.dispatchEvent(changeEvent);
+                 }
+             });
+         }
+
+        // --- Lógica Modal Participantes ---
+         const participantsModal = document.getElementById('participantsModal');
+         const participantsGrid = document.getElementById('participantsGrid');
+         const participantsLoader = document.getElementById('participantsLoader');
+         const noParticipantsMessage = document.getElementById('noParticipantsMessage');
+
+         function openParticipantsModal(projectId) {
+             console.log("Abriendo participantes para proyecto:", projectId);
+             document.getElementById('participantsModalTitle').textContent = `Participantes del Proyecto #${projectId}`; // Actualizar título si tienes nombre
+             participantsGrid.innerHTML = ''; // Limpiar grid
+             participantsLoader.style.display = 'flex'; // Mostrar loader
+             noParticipantsMessage.style.display = 'none'; // Ocultar mensaje
+             participantsModal.classList.add('active');
+             document.body.style.overflow = 'hidden';
+
+             // Simular carga de participantes
+             // fetch(`/api/admin/proyectos/${projectId}/participantes`) ...
+              setTimeout(() => {
+                  // Mock data:
+                  const mockParticipants = [
+                      { id: 101, name: "Beatriz Sánchez", email: "beatriz.s@example.com", hours: 15, avatar: "placeholder-avatar1.png" },
+                      { id: 105, name: "Ricardo Gomez", email: "ricardo.g@example.com", hours: 8, avatar: null }, // Sin avatar
+                      { id: 110, name: "Sofia Castillo", email: "sofia.c@example.com", hours: 22, avatar: "placeholder-avatar3.png" }
+                  ];
+                  participantsLoader.style.display = 'none'; // Ocultar loader
+
+                  if (mockParticipants.length === 0) {
+                      noParticipantsMessage.style.display = 'block';
+                  } else {
+                      mockParticipants.forEach(p => {
+                          const card = document.createElement('div');
+                          card.className = 'participant-card';
+                          card.innerHTML = `
+                              <div class="participant-avatar">
+                                  ${p.avatar ? `<img src="${p.avatar}" alt="${p.name}">` : '<i class="fas fa-user"></i>'}
+                              </div>
+                              <h4>${p.name}</h4>
+                              <p>${p.email}</p>
+                              <span class="hours">${p.hours} horas</span>`;
+                          participantsGrid.appendChild(card);
+                      });
+                  }
+
+              }, 1200); // Simular 1.2 seg
+          }
+
+         function closeParticipantsModal() {
+             participantsModal.classList.remove('active');
+             document.body.style.overflow = '';
+         }
+
+
+        // --- Lógica Menú Acciones Dropdown ---
+        function toggleActionsMenu(button) {
+            const menu = button.nextElementSibling; // Asume que el menú es el siguiente hermano
+            // Cerrar otros menús abiertos
+             document.querySelectorAll('.actions-menu.active').forEach(openMenu => {
+                 if (openMenu !== menu) {
+                     openMenu.classList.remove('active');
+                 }
+             });
+            menu.classList.toggle('active');
+        }
+         // Cerrar menús si se hace clic fuera
+         document.addEventListener('click', function(event) {
+             if (!event.target.closest('.actions-menu-container')) {
+                 document.querySelectorAll('.actions-menu.active').forEach(menu => {
+                     menu.classList.remove('active');
+                 });
+             }
+         });
+
+
+        // --- Lógica de Confirmación ---
+         const confirmModal = document.getElementById('confirmActionModal');
+         const confirmModalButton = document.getElementById('confirmModalButton');
+         let confirmCallback = null; // Para guardar la función a ejecutar
+
+         function showConfirmModal(message, onConfirm, type = 'danger') {
+             document.getElementById('confirmModalMessage').textContent = message;
+             confirmCallback = onConfirm;
+             confirmModalButton.className = `submit-btn ${type}`; // Cambiar clase según tipo
+             document.getElementById('confirmModalTitle').innerHTML = `<i class="fas ${type === 'danger' ? 'fa-exclamation-triangle' : 'fa-question-circle'}"></i> Confirmar Acción`;
+             confirmModal.classList.add('active');
+             document.body.style.overflow = 'hidden';
+         }
+
+         function closeConfirmModal() {
+             confirmModal.classList.remove('active');
+             if (!projectFormModal.classList.contains('active') && !participantsModal.classList.contains('active')) {
+                document.body.style.overflow = ''; // Solo restaurar si no hay otros modales abiertos
+             }
+         }
+
+         confirmModalButton.addEventListener('click', () => {
+             if (typeof confirmCallback === 'function') {
+                 confirmCallback();
+             }
+             closeConfirmModal();
+         });
+
+        // --- Lógica Notificaciones --- (Reutilizada)
+         function showNotification(type, title, message) { const container = document.getElementById('notificationContainer'); const iconClasses = { success: 'fa-check-circle', warning: 'fa-exclamation-triangle', danger: 'fa-times-circle', info: 'fa-info-circle' }; const notification = document.createElement('div'); notification.className = `notification notification-${type}`; notification.style = `background-color: white; padding: 1rem; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 0.8rem; margin-top: 0.5rem; border-left: 5px solid var(--${type}-color); min-width: 300px; opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease; transform: translateX(20px);`; notification.innerHTML = `<i class="fas ${iconClasses[type]}" style="font-size: 1.2rem; color: var(--${type}-color);"></i><div><strong style="display: block; color: var(--dark-color);">${title}</strong><span style="font-size: 0.9rem; color: var(--text-secondary-color);">${message}</span></div><button onclick="this.parentElement.style.opacity=0; setTimeout(()=>this.parentElement.remove(),300)" style="background:none; border:none; font-size:1.2rem; color:#aaa; cursor:pointer; margin-left:auto;">&times;</button>`; container.prepend(notification); setTimeout(() => { notification.style.opacity = 1; notification.style.transform = 'translateX(0)'; }, 10); setTimeout(() => { notification.style.opacity = 0; setTimeout(() => { notification.remove(); }, 300); }, 5000); }
+
+        // --- Funciones Placeholder para Carga de Datos ---
+        function loadProjects() {
+             console.log("Cargando proyectos...");
+             const grid = document.getElementById('projectsGrid');
+             const loader = document.getElementById('projectsLoader');
+             const noDataMsg = document.getElementById('noProjectsMessage');
+             const pagination = document.getElementById('projectsPagination');
+             grid.innerHTML = ''; // Limpiar antes de mostrar loader
+             loader.style.display = 'flex';
+             noDataMsg.style.display = 'none';
+             pagination.style.display = 'none';
+
+             // Simular fetch
+             // fetch('/api/admin/proyectos?status=...')
+             setTimeout(() => {
+                 loader.style.display = 'none';
+                 // --- Mock Data ---
+                 const projects = [
+                     { id: 1, name: "Campaña Donación Ropa Invierno", description: "Recolección y distribución de ropa de abrigo para personas necesitadas.", status: "ACTIVE", visibility: "PUBLIC", participants: 25, limit: 50, date: "20 Abr 2025", imageUrl: "placeholder-project1.jpg", hasForum: true },
+                     { id: 2, name: "Voluntariado Corporativo TechCorp", description: "Organización de actividades exclusivas para empleados de TechCorp Inc.", status: "DRAFT", visibility: "COMPANY", companyName: "TechCorp Inc.", participants: 0, limit: 0, date: "25 Abr 2025", imageUrl: "placeholder-project2.jpg", hasForum: false },
+                     { id: 3, name: "Limpieza Río Sinú", description: "Jornada de limpieza de las orillas del río.", status: "COMPLETED", visibility: "PUBLIC", participants: 60, limit: 60, date: "10 Mar 2025", imageUrl: null, hasForum: true },
+                 ];
+                 // --- Fin Mock Data ---
+
+                 if (projects.length === 0) {
+                     noDataMsg.style.display = 'block';
+                 } else {
+                     projects.forEach(p => grid.appendChild(createProjectCard(p)));
+                     // Mostrar paginación si aplica
+                     // displayPagination(pagination, currentPage, totalPages, 'loadProjectsPage');
+                     // pagination.style.display = 'flex';
+                 }
+             }, 1500);
+         }
+
+         function createProjectCard(project) {
+             const card = document.createElement('div');
+             card.className = 'project-card';
+             card.dataset.projectId = project.id;
+
+             const statusClasses = { ACTIVE: 'status-active', DRAFT: 'status-draft', COMPLETED: 'status-completed', ARCHIVED: 'status-archived' };
+             const visibilityClasses = { PUBLIC: 'visibility-public', COMPANY: 'visibility-company' };
+             const visibilityIcons = { PUBLIC: 'fa-globe-americas', COMPANY: 'fa-building' };
+
+             card.innerHTML = `
+                <div class="project-image">
+                    ${project.imageUrl ? `<img src="${project.imageUrl}" alt="${project.name}">` : `<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size: 3rem; color: #ccc;"><i class="fas fa-image"></i></div>`}
+                </div>
+                <div class="project-status-badge ${statusClasses[project.status] || 'status-draft'}">${project.status || 'BORRADOR'}</div>
+                <div class="project-visibility-badge ${visibilityClasses[project.visibility] || ''}">
+                    <i class="fas ${visibilityIcons[project.visibility] || 'fa-eye-slash'}"></i>
+                    ${project.visibility === 'COMPANY' ? (project.companyName || 'Empresa') : 'Público'}
+                </div>
+                <div class="project-content">
+                    <h3>${project.name}</h3>
+                    <p class="description">${project.description}</p>
+                    <div class="project-meta">
+                        <span><i class="fas fa-users"></i> ${project.participants}/${project.limit === 0 ? '∞' : project.limit}</span>
+                        <span><i class="fas fa-calendar-alt"></i> ${project.date}</span>
+                    </div>
+                </div>
+                <div class="actions-menu-container project-actions-container">
+                    <button class="project-action-btn" onclick="toggleActionsMenu(this)" title="Acciones"> <i class="fas fa-ellipsis-v"></i> </button>
+                    <div class="actions-menu">
+                        <button onclick='openProjectModal(${JSON.stringify(project)})'><i class="fas fa-edit"></i> Editar</button>
+                        <button onclick="openParticipantsModal('${project.id}')"><i class="fas fa-users"></i> Ver Participantes</button>
+                        <hr>
+                        <button onclick="archiveProject('${project.id}')"><i class="fas fa-archive"></i> Archivar</button>
+                        <button onclick="confirmDeleteProject('${project.id}')" class="delete-action"><i class="fas fa-trash"></i> Eliminar</button>
+                    </div>
+                </div>`;
+             return card;
+         }
+
+
+         function loadUsers() {
+             console.log("Cargando usuarios...");
+             const grid = document.getElementById('usersGrid');
+             const loader = document.getElementById('usersLoader');
+             const noDataMsg = document.getElementById('noUsersMessage');
+             const pagination = document.getElementById('usersPagination');
+             grid.innerHTML = '';
+             loader.style.display = 'flex';
+             noDataMsg.style.display = 'none';
+             pagination.style.display = 'none';
+
+             // Simular fetch
+             // fetch('/api/admin/users?role=...')
+             setTimeout(() => {
+                  loader.style.display = 'none';
+                 // --- Mock Data ---
+                 const users = [
+                     { id: 101, name: "Beatriz Sánchez", email: "beatriz.s@example.com", role: "VOLUNTEER", status: "ACTIVE", company: null, avatar: "placeholder-avatar1.png" },
+                     { id: 102, name: "Carlos Mendoza", email: "carlos.m@techcorp.com", role: "VOLUNTEER", status: "ACTIVE", company: "TechCorp Inc.", avatar: "placeholder-avatar2.png" },
+                     { id: 103, name: "Admin General", email: "admin@volunteerhub.org", role: "ADMIN", status: "ACTIVE", company: null, avatar: "admin-avatar.png" },
+                     { id: 104, name: "Usuario Inactivo", email: "inactive@example.com", role: "VOLUNTEER", status: "INACTIVE", company: null, avatar: null },
+                 ];
+                 // --- Fin Mock Data ---
+
+                  if (users.length === 0) {
+                      noDataMsg.style.display = 'block';
+                  } else {
+                      users.forEach(u => grid.appendChild(createUserCard(u)));
+                      // Mostrar paginación si aplica
+                      // displayPagination(pagination, currentPage, totalPages, 'loadUsersPage');
+                      // pagination.style.display = 'flex';
+                  }
+             }, 1000);
+         }
+
+        function createUserCard(user) {
+             const card = document.createElement('div');
+             card.className = 'user-card';
+             card.dataset.userId = user.id;
+
+             const roleClasses = { ADMIN: 'badge-role-admin', VOLUNTEER: 'badge-role-volunteer' };
+             const statusClasses = { ACTIVE: 'badge-status-active', INACTIVE: 'badge-status-inactive' };
+
+             card.innerHTML = `
+                 <div class="user-avatar">
+                     ${user.avatar ? `<img src="${user.avatar}" alt="${user.name}">` : '<i class="fas fa-user"></i>'}
+                 </div>
+                 <div class="user-info">
+                     <h4>${user.name}</h4>
+                     <div class="email">${user.email}</div>
+                     <div class="user-badges">
+                         <span class="user-badge ${roleClasses[user.role] || ''}">${user.role}</span>
+                         <span class="user-badge ${statusClasses[user.status] || ''}">${user.status}</span>
+                         ${user.company ? `<span class="user-badge badge-company">${user.company}</span>` : ''}
+                     </div>
+                 </div>
+                 <div class="actions-menu-container user-actions-container">
+                     <button class="project-action-btn" onclick="toggleActionsMenu(this)" title="Acciones"> <i class="fas fa-ellipsis-v"></i> </button>
+                     <div class="actions-menu">
+                         <button onclick="viewUserProfile('${user.id}')"><i class="fas fa-eye"></i> Ver Perfil</button>
+                         <button onclick="editUserRole('${user.id}')"><i class="fas fa-user-tag"></i> Cambiar Rol</button>
+                         <hr>
+                          ${user.status === 'ACTIVE'
+                            ? `<button onclick="confirmDeactivateUser('${user.id}')" class="delete-action"><i class="fas fa-user-times"></i> Desactivar</button>`
+                            : `<button onclick="activateUser('${user.id}')"><i class="fas fa-user-check"></i> Activar</button>`
+                          }
+                     </div>
+                 </div>`;
+             return card;
+         }
+
+        // --- Funciones Placeholder para Acciones ---
+        function archiveProject(id) { showConfirmModal(`¿Seguro que quieres archivar el proyecto #${id}? Ya no será visible para voluntarios.`, () => { console.log("Archivando proyecto", id); showNotification('warning', 'Archivado', `Proyecto #${id} archivado.`); }, 'warning'); }
+        function confirmDeleteProject(id) { showConfirmModal(`¿Seguro que quieres ELIMINAR PERMANENTEMENTE el proyecto #${id}? Esta acción no se puede deshacer.`, () => { console.log("Eliminando proyecto", id); showNotification('danger', 'Eliminado', `Proyecto #${id} eliminado.`); document.querySelector(`.project-card[data-project-id="${id}"]`)?.remove(); }, 'danger'); }
+        function viewUserProfile(id) { console.log("Ver perfil usuario", id); showNotification('info', 'En desarrollo', 'La vista de perfil de usuario no está implementada.'); }
+        function editUserRole(id) { console.log("Editar rol usuario", id); showNotification('info', 'En desarrollo', 'La edición de roles no está implementada.'); }
+        function confirmDeactivateUser(id) { showConfirmModal(`¿Seguro que quieres DESACTIVAR al usuario #${id}? No podrá iniciar sesión.`, () => { console.log("Desactivando usuario", id); showNotification('warning', 'Desactivado', `Usuario #${id} desactivado.`); const card = document.querySelector(`.user-card[data-user-id="${id}"]`); if(card) card.querySelector('.badge-status-active')?.classList.replace('badge-status-active','badge-status-inactive'); /* Actualizar UI */ }, 'danger'); }
+         function activateUser(id) { console.log("Activando usuario", id); showNotification('success', 'Activado', `Usuario #${id} activado.`); const card = document.querySelector(`.user-card[data-user-id="${id}"]`); if(card) card.querySelector('.badge-status-inactive')?.classList.replace('badge-status-inactive','badge-status-active'); /* Actualizar UI */}
+
+
+        // --- Inicialización ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cargar la primera pestaña por defecto
+             openTab({ currentTarget: document.querySelector('.tab-btn.active') }, 'projectsTab');
+
+             // Añadir listeners a los inputs de búsqueda (ejemplo para proyectos)
+             const projectSearch = document.getElementById('projectSearchInput');
+             if(projectSearch) {
+                 let debounceTimer;
+                 projectSearch.addEventListener('input', () => {
+                     clearTimeout(debounceTimer);
+                     debounceTimer = setTimeout(loadProjects, 500); // Recargar proyectos 500ms después de dejar de escribir
+                 });
+             }
+              // Añadir listeners a los filtros (ejemplo para proyectos)
+             document.getElementById('projectStatusFilter')?.addEventListener('change', loadProjects);
+             document.getElementById('projectVisibilityFilter')?.addEventListener('change', loadProjects);
+
+             // Añadir listeners para búsqueda y filtros de usuarios
+             const userSearch = document.getElementById('userSearchInput');
+              if(userSearch) {
+                 let userDebounceTimer;
+                 userSearch.addEventListener('input', () => {
+                     clearTimeout(userDebounceTimer);
+                     userDebounceTimer = setTimeout(loadUsers, 500);
+                 });
+             }
+             document.getElementById('userRoleFilter')?.addEventListener('change', loadUsers);
+             document.getElementById('userStatusFilter')?.addEventListener('change', loadUsers);
+             document.getElementById('userCompanyFilter')?.addEventListener('change', loadUsers);
+
+        });
+
+    </script>
+
+</body>
+</html>
