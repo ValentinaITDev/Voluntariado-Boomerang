@@ -697,16 +697,38 @@
                 // 2. Obtener todos los desafíos disponibles
                 let desafiosResponse;
                 let desafios = []; // Inicializar como array vacío
+                
+                // Primero intentar directamente con el endpoint público que no requiere autenticación
                 try {
-                    desafiosResponse = await fetch(API_DESAFIOS_URL);
+                    console.log("Intentando cargar desafíos desde endpoint público...");
+                    desafiosResponse = await fetch(`${API_DESAFIOS_URL}/publicos`);
+                    
+                    // Si falla, intentar con el endpoint principal 
                     if (!desafiosResponse.ok) {
-                         // Si falla, intentar con la ruta pública
-                         console.warn(`API principal de desafíos falló (${desafiosResponse.status}), intentando /publicos`);
-                         desafiosResponse = await fetch(`${API_DESAFIOS_URL}/publicos`);
+                        console.warn(`API de desafíos públicos falló (${desafiosResponse.status}), intentando endpoint principal`);
+                        desafiosResponse = await fetch(API_DESAFIOS_URL);
                     }
-
+                    
+                    // Verificar si la segunda respuesta también falló
                     if (!desafiosResponse.ok) {
-                        throw new Error(`Error ${desafiosResponse.status} obteniendo desafíos (ni ${API_DESAFIOS_URL} ni ${API_DESAFIOS_URL}/publicos funcionaron)`);
+                        throw new Error(`Error ${desafiosResponse.status} obteniendo desafíos`);
+                    }
+                    
+                    // Verificar que el tipo de contenido sea JSON
+                    const contentType = desafiosResponse.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) {
+                        // Intentar leer la respuesta para ver si es una página de login
+                        const htmlContent = await desafiosResponse.text();
+                        
+                        // Verificar si es una página de login o si contiene ciertos patrones
+                        if (htmlContent.includes('<form') && 
+                            (htmlContent.includes('login') || htmlContent.includes('iniciar sesión') || 
+                             htmlContent.includes('password') || htmlContent.includes('contraseña'))) {
+                            throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente");
+                        } else {
+                            console.error("Respuesta HTML recibida en lugar de JSON:", htmlContent.substring(0, 200) + "...");
+                            throw new Error("La API está devolviendo HTML en lugar de JSON. Posible problema de sesión o autenticación.");
+                        }
                     }
 
                     const desafiosData = await desafiosResponse.json();
@@ -761,18 +783,38 @@
                 
             } catch (error) {
                 console.error('Error al cargar desafíos:', error);
+                
+                // Mostrar un mensaje específico según el tipo de error
+                let errorMessage = error.message;
+                let showLoginButton = errorMessage.includes("sesión") || errorMessage.includes("autenticación");
+                
                 challengesGrid.innerHTML = `
                     <div style="text-align: center; padding: 20px;">
-                        <p>Error al cargar desafíos: ${error.message}</p>
-                        <button class="retry-btn" onclick="loadChallenges()" style="
-                            margin-top: 10px;
-                            padding: 8px 16px;
-                            background: var(--primary-color);
-                            color: white;
-                            border: none;
-                            border-radius: 4px;
-                            cursor: pointer;
-                        ">Reintentar</button>
+                        <p>Error al cargar desafíos: ${errorMessage}</p>
+                        ${showLoginButton ? 
+                            `<button class="login-btn" onclick="window.location.href='/login'" style="
+                                margin-top: 15px;
+                                padding: 10px 20px;
+                                background: var(--primary-color);
+                                color: white;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-weight: bold;
+                            ">
+                                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                            </button>` 
+                            : 
+                            `<button class="retry-btn" onclick="loadChallenges()" style="
+                                margin-top: 10px;
+                                padding: 8px 16px;
+                                background: var(--primary-color);
+                                color: white;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                            ">Reintentar</button>`
+                        }
                     </div>`;
             }
         }

@@ -1557,42 +1557,115 @@
         
         // Función para cargar desafíos desde la API
         async function loadChallenges() {
-            console.log("Cargando desafíos desde API: " + CHALLENGE_API_URL);
-            
-            challengesGrid.innerHTML = '<p>Cargando desafíos...</p>';
-            
             try {
-                const response = await fetch(CHALLENGE_API_URL);
+                // Asegurarse de que la referencia al contenedor de desafíos sea correcta
+                const challengesContainer = document.getElementById('challenges-container') || challengesGrid;
+                
+                challengesContainer.innerHTML = '<p class="loading">Cargando desafíos...</p>';
+                
+                // Primero intentar con endpoint público que no requiere autenticación
+                console.log("Intentando cargar desafíos desde endpoint público...");
+                let response = await fetch('/api/desafios/publicos');
+                
+                // Si falla, intentar con endpoint principal
                 if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
+                    console.warn(`API de desafíos públicos falló (${response.status}), intentando endpoint principal`);
+                    response = await fetch('/api/desafios');
                 }
                 
-                const responseData = await response.json();
-                
-                // Verificar si la respuesta es paginada (formato Spring)
-                // Si tiene propiedad "content", se trata de una respuesta paginada
-                let challenges = responseData;
-                
-                if (responseData && responseData.content && Array.isArray(responseData.content)) {
-                    console.log('Detectada respuesta paginada. Extrayendo contenido...');
-                    challenges = responseData.content;
-                } else if (!Array.isArray(responseData)) {
-                    console.error('La respuesta de la API no es un array ni un objeto paginado:', responseData);
-                    challenges = Array.isArray(challenges) ? challenges : [];
+                // Verificar si la segunda respuesta también falló
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status} obteniendo desafíos`);
                 }
                 
-                // Guardar desafíos en variable global
+                // Verificar que el tipo de contenido sea JSON
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    // Intentar leer la respuesta para ver si es una página de login
+                    const htmlContent = await response.text();
+                    
+                    // Verificar si es una página de login o si contiene ciertos patrones
+                    if (htmlContent.includes('<form') && 
+                        (htmlContent.includes('login') || htmlContent.includes('iniciar sesión') || 
+                         htmlContent.includes('password') || htmlContent.includes('contraseña'))) {
+                        throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente");
+                    } else {
+                        console.error("Respuesta HTML recibida en lugar de JSON:", htmlContent.substring(0, 200) + "...");
+                        throw new Error("La API está devolviendo HTML en lugar de JSON. Posible problema de sesión o autenticación.");
+                    }
+                }
+                
+                const data = await response.json();
+                
+                // Determinar si los datos son un array o están dentro de un objeto paginado
+                let challenges = Array.isArray(data) ? data : (data.content || []);
+                
+                // Verificar si el array está vacío
+                if (challenges.length === 0) {
+                    challengesContainer.innerHTML = '<p>No hay desafíos disponibles</p>';
+                    return;
+                }
+                
+                // Guardar datos de desafíos para referencia global
                 challengesData = challenges;
                 
-                // Mostrar desafíos
-                displayChallenges(challenges);
+                // Generar HTML para cada desafío
+                challengesContainer.innerHTML = '';
                 
-                // Cargar proyectos para el select del formulario
-                loadProjectsForSelect();
+                // Usar la función original del admin si existe, o crear tarjetas de manera simple
+                if (typeof displayChallenges === 'function') {
+                    displayChallenges(challenges);
+                } else if (typeof createChallengeCard === 'function') {
+                    challenges.forEach(challenge => {
+                        const card = createChallengeCard(challenge);
+                        challengesContainer.appendChild(card);
+                    });
+                } else {
+                    // Método genérico para crear tarjetas si no hay método específico
+                    challenges.forEach(challenge => {
+                        const card = document.createElement('div');
+                        card.className = 'challenge-card';
+                        card.dataset.id = challenge.id;
+                        
+                        card.innerHTML = `
+                            <h3>${challenge.titulo || 'Sin título'}</h3>
+                            <p>${challenge.descripcion || 'Sin descripción'}</p>
+                            <div class="challenge-meta">
+                                <span>Puntos: ${challenge.puntosRecompensa || 0}</span>
+                                <span>Estado: ${challenge.estado || 'Activo'}</span>
+                            </div>
+                        `;
+                        
+                        challengesContainer.appendChild(card);
+                    });
+                }
+                
+                // Cargar proyectos para el selector si estamos en la vista de administración
+                if (typeof loadProjectsForSelect === 'function') {
+                    loadProjectsForSelect();
+                }
                 
             } catch (error) {
                 console.error('Error al cargar desafíos:', error);
-                challengesGrid.innerHTML = '<p>Error al cargar los desafíos. Intente de nuevo más tarde.</p>';
+                
+                // Mostrar un mensaje específico según el tipo de error
+                let errorMessage = error.message;
+                let showLoginButton = errorMessage.includes("sesión") || errorMessage.includes("autenticación");
+                
+                const errorContainer = document.getElementById('challenges-container') || challengesGrid;
+                errorContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>Error al cargar desafíos: ${errorMessage}</p>
+                        ${showLoginButton ? 
+                            `<a href="/login" class="btn btn-primary mt-3">
+                                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                            </a>` : 
+                            `<button onclick="loadChallenges()" class="btn btn-outline-danger btn-sm mt-2">
+                                <i class="fas fa-sync"></i> Reintentar
+                            </button>`
+                        }
+                    </div>
+                `;
             }
         }
         

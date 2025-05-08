@@ -1,5 +1,4 @@
 FROM eclipse-temurin:21-jdk-alpine
-VOLUME /tmp
 WORKDIR /app
 
 # Copiar y configurar el archivo JAR

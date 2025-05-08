@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -103,7 +104,7 @@ public class DesafioController {
      * Endpoint principal - Lista todos los desafíos disponibles en el sistema
      * Lo usamos en la pantalla principal de desafíos y en el dashboard
      */
-    @GetMapping
+    @GetMapping("/paginados")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<Desafio>> obtenerDesafios(
             @RequestParam(defaultValue = "0") int page,
@@ -120,8 +121,17 @@ public class DesafioController {
     public ResponseEntity<Page<Desafio>> obtenerDesafiosPublicos(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(desafioServicio.obtenerTodosPaginados(pageable));
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Desafio> desafios = desafioServicio.obtenerTodosPaginados(pageable);
+            return ResponseEntity
+                .ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(desafios);
+        } catch (Exception e) {
+            log.error("Error al obtener desafíos públicos", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     /**
@@ -359,7 +369,7 @@ public class DesafioController {
     /**
      * Obtiene todos los desafíos o filtra por proyecto o tipo
      */
-    @GetMapping
+    @GetMapping("/filtrados")
     public ResponseEntity<List<Desafio>> obtenerDesafios(
             @RequestParam(required = false) String proyectoId,
             @RequestParam(required = false) String tipo) {
@@ -393,7 +403,7 @@ public class DesafioController {
     /**
      * Busca desafíos por palabra clave
      */
-    @GetMapping("/buscar")
+    @GetMapping("/texto")
     public ResponseEntity<List<Desafio>> buscar(@RequestParam String q) {
         if (q == null || q.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();

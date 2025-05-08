@@ -430,7 +430,7 @@ function loadChallenges() {
         credentials: 'include' // Incluir cookies para la autenticación
     };
     
-    fetch('/api/desafios', fetchOptions)
+    fetch('/api/desafios/paginados', fetchOptions)
         .then(response => {
             if (!response.ok) {
                 // Obtener más detalles sobre el error
