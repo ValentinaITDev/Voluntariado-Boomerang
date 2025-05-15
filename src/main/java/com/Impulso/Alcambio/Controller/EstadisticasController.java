@@ -130,102 +130,179 @@ public class EstadisticasController {
     // =================== MÉTODOS AUXILIARES ===================
     
     /**
+     * Helper para obtener valores Long de un mapa de forma segura.
+     */
+    private Long getLongValueFromMap(Map<String, Object> map, String key, Long defaultValue) {
+        if (map == null) return defaultValue;
+        Object value = map.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        } else if (value instanceof String) {
+            try {
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException e) {
+                // Considerar loguear este error si ocurre frecuentemente
+                return defaultValue;
+            }
+        }
+        // Si se espera un Long y el valor es null pero la clave existe, y defaultValue es null, se retorna null.
+        if (defaultValue == null && value == null && map.containsKey(key)) return null; 
+        return defaultValue;
+    }
+
+    /**
      * Procesa los datos del resumen para asegurar consistencia
      */
     private Map<String, Object> procesarDatosResumen(Map<String, Object> resumen) {
-        // Procesar los datos para garantizar que todas las propiedades necesarias estén disponibles
         Map<String, Object> resultado = new HashMap<>();
         
         // Métricas principales (con valores por defecto en caso de ser nulos)
-        resultado.put("totalUsuarios", resumen.getOrDefault("totalUsuarios", 0L));
-        resultado.put("totalVoluntarios", resumen.getOrDefault("totalVoluntarios", 0L));
-        resultado.put("totalAdministradores", resumen.getOrDefault("totalAdministradores", 0L));
-        resultado.put("proyectosActivos", resumen.getOrDefault("proyectosActivos", 0L));
-        resultado.put("desafiosCompletados", resumen.getOrDefault("desafiosCompletados", 0L));
-        resultado.put("empresasParticipantes", resumen.getOrDefault("empresasParticipantes", 0L));
-        
-        // Datos de tendencias (con valores por defecto)
-        resultado.put("tendenciaUsuarios", resumen.getOrDefault("tendenciaUsuarios", 0.0));
-        resultado.put("tendenciaProyectos", resumen.getOrDefault("tendenciaProyectos", 0.0));
-        resultado.put("tendenciaDesafios", resumen.getOrDefault("tendenciaDesafios", 0.0));
-        resultado.put("tendenciaEmpresas", resumen.getOrDefault("tendenciaEmpresas", 0.0));
-        
-        // Datos para gráfica de desafíos
-        resultado.put("completados", resumen.getOrDefault("completados", 0L));
-        resultado.put("enProgreso", resumen.getOrDefault("enProgreso", 0L));
-        resultado.put("sinComenzar", resumen.getOrDefault("sinComenzar", 0L));
-        
-        // Datos para gráfica de proyectos
-        if (resumen.containsKey("proyectosPorEstado")) {
-            resultado.put("proyectosPorEstado", resumen.get("proyectosPorEstado"));
+        Long totalVoluntarios = getLongValueFromMap(resumen, "totalVoluntarios", 0L);
+        Long totalAdministradores = getLongValueFromMap(resumen, "totalAdministradores", 0L);
+        Long totalUsuariosOriginal = getLongValueFromMap(resumen, "totalUsuarios", null); // Permitir null para detectar si no vino
+
+        Long totalUsuariosCalculado;
+        // Si el servicio ya proveyó un totalUsuarios > 0, usar ese.
+        if (totalUsuariosOriginal != null && totalUsuariosOriginal > 0L) {
+            totalUsuariosCalculado = totalUsuariosOriginal;
         } else {
-            Map<String, Long> estadosProyecto = new HashMap<>();
-            estadosProyecto.put("ACTIVO", 0L);
-            estadosProyecto.put("COMPLETADO", 0L);
-            estadosProyecto.put("EXPIRADO", 0L);
-            estadosProyecto.put("CANCELADO", 0L);
-            resultado.put("proyectosPorEstado", estadosProyecto);
+            // Si no, o si era 0, calcularlo desde los componentes.
+            // Esto asegura que si hay voluntarios o admins, el total no será 0 a menos que ambos sean 0.
+            totalUsuariosCalculado = totalVoluntarios + totalAdministradores;
         }
+
+        // Almacenar como valores primitivos
+        resultado.put("totalUsuarios", totalUsuariosCalculado.longValue());
+        resultado.put("totalVoluntarios", totalVoluntarios.longValue());
+        resultado.put("totalAdministradores", totalAdministradores.longValue());
+
+        // Métricas númericas como valores primitivos
+        resultado.put("proyectosActivos", getLongValueFromMap(resumen, "proyectosActivos", 0L).longValue());
+        resultado.put("desafiosCompletados", getLongValueFromMap(resumen, "desafiosCompletados", 0L).longValue());
+        resultado.put("empresasParticipantes", getLongValueFromMap(resumen, "empresasParticipantes", 0L).longValue());
+        
+        // Datos de tendencias como valores primitivos
+        Object tendenciaUsuarios = resumen.getOrDefault("tendenciaUsuarios", 0.0);
+        Object tendenciaProyectos = resumen.getOrDefault("tendenciaProyectos", 0.0);
+        Object tendenciaDesafios = resumen.getOrDefault("tendenciaDesafios", 0.0);
+        Object tendenciaEmpresas = resumen.getOrDefault("tendenciaEmpresas", 0.0);
+        
+        resultado.put("tendenciaUsuarios", tendenciaUsuarios instanceof Number ? ((Number)tendenciaUsuarios).doubleValue() : 0.0);
+        resultado.put("tendenciaProyectos", tendenciaProyectos instanceof Number ? ((Number)tendenciaProyectos).doubleValue() : 0.0);
+        resultado.put("tendenciaDesafios", tendenciaDesafios instanceof Number ? ((Number)tendenciaDesafios).doubleValue() : 0.0);
+        resultado.put("tendenciaEmpresas", tendenciaEmpresas instanceof Number ? ((Number)tendenciaEmpresas).doubleValue() : 0.0);
+        
+        // Datos para gráfica de desafíos como valores primitivos
+        resultado.put("completados", getLongValueFromMap(resumen, "completados", 0L).longValue());
+        resultado.put("enProgreso", getLongValueFromMap(resumen, "enProgreso", 0L).longValue());
+        resultado.put("sinComenzar", getLongValueFromMap(resumen, "sinComenzar", 0L).longValue());
         
         // Datos para gráfica de proyectos por mes
-        if (resumen.containsKey("proyectosPorMes")) {
-            resultado.put("proyectosPorMes", resumen.get("proyectosPorMes"));
+        Object proyectosPorMesData = resumen.get("proyectosPorMes");
+        if (proyectosPorMesData instanceof Map) {
+            Map<String, Object> originalMap = (Map<String, Object>)proyectosPorMesData;
+            Map<String, Long> proyectosPorMesPrimitivos = new HashMap<>();
+            
+            for (Map.Entry<String, Object> entry : originalMap.entrySet()) {
+                if (entry.getValue() instanceof Number) {
+                    proyectosPorMesPrimitivos.put(entry.getKey(), ((Number)entry.getValue()).longValue());
+                } else {
+                    try {
+                        proyectosPorMesPrimitivos.put(entry.getKey(), Long.parseLong(entry.getValue().toString()));
+                    } catch (Exception e) {
+                        proyectosPorMesPrimitivos.put(entry.getKey(), 0L);
+                    }
+                }
+            }
+            resultado.put("proyectosPorMes", proyectosPorMesPrimitivos);
         } else {
             resultado.put("proyectosPorMes", generarDatosProyectosPorMesVacios());
         }
         
-        // Datos de actividad
-        if (resumen.containsKey("actividad")) {
-            resultado.put("actividad", resumen.get("actividad"));
-        } else {
-            List<Map<String, Object>> actividadUsuarios = estadisticasServicio.obtenerActividadUsuarios();
-            resultado.put("actividad", actividadUsuarios);
-        }
-        
-        // Datos para nuevas gráficas
-        // Foros activos
-        if (resumen.containsKey("forosActivos")) {
-            resultado.put("forosActivos", resumen.get("forosActivos"));
-        } else {
-            List<Map<String, Object>> forosActivos = estadisticasServicio.obtenerForosPopulares();
-            resultado.put("forosActivos", forosActivos);
-        }
-        
-        // Desafíos por categoría
-        if (resumen.containsKey("desafiosCategorias")) {
-            resultado.put("desafiosCategorias", resumen.get("desafiosCategorias"));
-        } else {
-            // Obtener datos de categorías de desafíos
-            Map<String, Object> desafiosStats = estadisticasServicio.obtenerEstadisticasDesafios();
-            if (desafiosStats.containsKey("categorias")) {
-                resultado.put("desafiosCategorias", desafiosStats.get("categorias"));
-            } else {
-                // Datos por defecto
-                Map<String, Integer> defaultCategorias = new HashMap<>();
-                defaultCategorias.put("Medioambiente", 3);
-                defaultCategorias.put("Tecnología", 5);
-                defaultCategorias.put("Social", 2);
-                defaultCategorias.put("Educación", 4);
-                resultado.put("desafiosCategorias", defaultCategorias);
+        // Datos de actividad - procesar valores como primitivos
+        Object actividadData = resumen.get("actividad");
+        if (actividadData instanceof List) {
+            List<Map<String, Object>> actividad = (List<Map<String, Object>>)actividadData;
+            List<Map<String, Object>> actividadPrimitiva = new ArrayList<>();
+            
+            for (Map<String, Object> item : actividad) {
+                Map<String, Object> itemPrimitivo = new HashMap<>(item);
+                if (itemPrimitivo.containsKey("actividades") && itemPrimitivo.get("actividades") instanceof Number) {
+                    itemPrimitivo.put("actividades", ((Number)itemPrimitivo.get("actividades")).longValue());
+                }
+                actividadPrimitiva.add(itemPrimitivo);
             }
+            resultado.put("actividad", actividadPrimitiva);
+        } else {
+            resultado.put("actividad", new ArrayList<>());
         }
         
-        // Información de usuarios destacados
-        if (resumen.containsKey("usuariosConMasProyectos")) {
-            resultado.put("usuariosConMasProyectos", resumen.get("usuariosConMasProyectos"));
+        // Ranking de empresas - procesar valores como primitivos
+        Object empresasRankingData = resumen.get("empresasRanking");
+        if (empresasRankingData instanceof List) {
+            List<Map<String, Object>> empresasRanking = (List<Map<String, Object>>)empresasRankingData;
+            List<Map<String, Object>> empresasRankingPrimitivo = new ArrayList<>();
+            
+            for (Map<String, Object> empresa : empresasRanking) {
+                Map<String, Object> empresaPrimitiva = new HashMap<>(empresa);
+                // Procesar valores numéricos
+                for (String clave : new String[]{"usuarios", "proyectos", "puntos"}) {
+                    if (empresaPrimitiva.containsKey(clave) && empresaPrimitiva.get(clave) instanceof Number) {
+                        Number valor = (Number) empresaPrimitiva.get(clave);
+                        if (valor instanceof Integer || valor instanceof Long) {
+                            empresaPrimitiva.put(clave, valor.longValue());
+                        } else {
+                            empresaPrimitiva.put(clave, valor.doubleValue());
+                        }
+                    }
+                }
+                empresasRankingPrimitivo.add(empresaPrimitiva);
+            }
+            resultado.put("empresasRanking", empresasRankingPrimitivo);
+        } else {
+            resultado.put("empresasRanking", new ArrayList<>());
         }
-        
-        // Información de proyectos recientes
-        if (resumen.containsKey("proyectosRecientes")) {
-            resultado.put("proyectosRecientes", resumen.get("proyectosRecientes"));
+
+        // Foros activos - procesar valores como primitivos
+        Object forosActivosData = resumen.get("forosActivos");
+        if (forosActivosData instanceof List) {
+            List<Map<String, Object>> forosActivos = (List<Map<String, Object>>)forosActivosData;
+            List<Map<String, Object>> forosActivosPrimitivo = new ArrayList<>();
+            
+            for (Map<String, Object> foro : forosActivos) {
+                Map<String, Object> foroPrimitivo = new HashMap<>(foro);
+                if (foroPrimitivo.containsKey("totalComentarios") && foroPrimitivo.get("totalComentarios") instanceof Number) {
+                    foroPrimitivo.put("totalComentarios", ((Number)foroPrimitivo.get("totalComentarios")).intValue());
+                }
+                forosActivosPrimitivo.add(foroPrimitivo);
+            }
+            resultado.put("forosActivos", forosActivosPrimitivo);
+        } else {
+            resultado.put("forosActivos", new ArrayList<>());
         }
-        
-        // DATOS DE EMPRESAS
-        resultado.put("empresasRanking", resumen.getOrDefault("empresasRanking", 
-                                       estadisticasServicio.obtenerRankingEmpresas(null)));
-        
-        resultado.put("participacionMensual", resumen.getOrDefault("participacionMensual", 
-                                      estadisticasServicio.obtenerParticipacionMensualPorEmpresa(null)));
+
+        // Asegurar otros campos que el frontend podría esperar, si aplica
+        // Ejemplo: desafíos por categoría
+        Object desafiosCategoriasData = resumen.get("desafiosCategorias");
+        if (desafiosCategoriasData instanceof Map) {
+            Map<String, Object> categorias = (Map<String, Object>)desafiosCategoriasData;
+            Map<String, Integer> categoriasPrimitivas = new HashMap<>();
+            
+            for (Map.Entry<String, Object> entry : categorias.entrySet()) {
+                if (entry.getValue() instanceof Number) {
+                    categoriasPrimitivas.put(entry.getKey(), ((Number)entry.getValue()).intValue());
+                } else {
+                    try {
+                        categoriasPrimitivas.put(entry.getKey(), Integer.parseInt(entry.getValue().toString()));
+                    } catch (Exception e) {
+                        categoriasPrimitivas.put(entry.getKey(), 0);
+                    }
+                }
+            }
+            resultado.put("desafiosCategorias", categoriasPrimitivas);
+        } else {
+            resultado.put("desafiosCategorias", new HashMap<>());
+        }
         
         return resultado;
     }
@@ -251,7 +328,7 @@ public class EstadisticasController {
         Map<String, Object> respuestaError = new HashMap<>();
         respuestaError.put("error", "Error al generar estadísticas: " + errorMsg);
         
-        // Datos básicos
+        // Datos básicos con valor 0
         respuestaError.put("totalUsuarios", 0L);
         respuestaError.put("totalVoluntarios", 0L);
         respuestaError.put("totalAdministradores", 0L);
@@ -259,18 +336,18 @@ public class EstadisticasController {
         respuestaError.put("desafiosCompletados", 0L);
         respuestaError.put("empresasParticipantes", 0L);
         
-        // Datos de tendencia
+        // Datos de tendencia con valor 0.0
         respuestaError.put("tendenciaUsuarios", 0.0);
         respuestaError.put("tendenciaProyectos", 0.0);
         respuestaError.put("tendenciaDesafios", 0.0);
         respuestaError.put("tendenciaEmpresas", 0.0);
         
-        // Datos específicos para gráficas de desafíos
+        // Datos específicos para gráficas de desafíos con valor 0
         respuestaError.put("completados", 0L);
         respuestaError.put("enProgreso", 0L);
         respuestaError.put("sinComenzar", 0L);
         
-        // Estado de proyectos
+        // Estado de proyectos (vacío o con ceros)
         Map<String, Long> estadosProyecto = new HashMap<>();
         estadosProyecto.put("ACTIVO", 0L);
         estadosProyecto.put("COMPLETADO", 0L);
@@ -278,110 +355,23 @@ public class EstadisticasController {
         estadosProyecto.put("CANCELADO", 0L);
         respuestaError.put("proyectosPorEstado", estadosProyecto);
         
-        // Datos de actividad dummy
-        respuestaError.put("actividad", generarActividadDummy());
+        // Datos de actividad (lista vacía)
+        respuestaError.put("actividad", new ArrayList<>());
         
-        // Datos para nuevas gráficas
-        Map<String, Integer> defaultCategorias = new HashMap<>();
-        defaultCategorias.put("Medioambiente", 1);
-        defaultCategorias.put("Tecnología", 1);
-        defaultCategorias.put("Social", 1);
-        defaultCategorias.put("Educación", 1);
-        respuestaError.put("desafiosCategorias", defaultCategorias);
+        // Categorías de desafíos (mapa vacío)
+        respuestaError.put("desafiosCategorias", new HashMap<>());
         
-        // Foros activos
-        respuestaError.put("forosActivos", generarForosActivosDummy());
+        // Foros activos (lista vacía)
+        respuestaError.put("forosActivos", new ArrayList<>());
         
-        // Datos de proyectos por mes dummy
-        respuestaError.put("proyectosPorMes", generarDatosProyectosPorMesVacios());
+        // Datos de proyectos por mes (mapa vacío)
+        respuestaError.put("proyectosPorMes", generarDatosProyectosPorMesVacios()); // Mantenemos la estructura de meses con 0
         
-        // Datos de empresas desde el servicio (con manejo de errores)
-        try {
-            // Intentar obtener datos reales de empresas
-            respuestaError.put("empresasRanking", estadisticasServicio.obtenerRankingEmpresas(null));
-            respuestaError.put("participacionMensual", estadisticasServicio.obtenerParticipacionMensualPorEmpresa(null));
-        } catch (Exception e) {
-            System.err.println("Error al obtener datos de empresas de respaldo: " + e.getMessage());
-            // Si falla, usar los métodos locales como último recurso
-            respuestaError.put("empresasRanking", generarDatosEmpresasRespaldo());
-            respuestaError.put("participacionMensual", generarDatosParticipacionMensualRespaldo());
-        }
+        // Datos de empresas (listas/mapas vacíos)
+        respuestaError.put("empresasRanking", new ArrayList<>());
+        respuestaError.put("participacionMensual", new HashMap<>());
         
         return respuestaError;
-    }
-    
-    /**
-     * Genera una lista dummy de foros activos para respaldo
-     */
-    private List<Map<String, Object>> generarForosActivosDummy() {
-        List<Map<String, Object>> forosDefault = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            Map<String, Object> foro = new HashMap<>();
-            foro.put("nombre", "Foro " + (i+1));
-            foro.put("comentarios", i+1);
-            forosDefault.add(foro);
-        }
-        return forosDefault;
-    }
-    
-    /**
-     * Genera datos básicos de empresas como último recurso
-     */
-    private List<Map<String, Object>> generarDatosEmpresasRespaldo() {
-        List<Map<String, Object>> empresasRespaldo = new ArrayList<>();
-        
-        // Al menos una empresa para evitar errores en UI
-        Map<String, Object> empresa = new HashMap<>();
-        empresa.put("nombre", "Empresa ejemplo");
-        empresa.put("usuarios", 1);
-        empresa.put("participaciones", 1);
-        empresa.put("puntos", 10);
-        empresasRespaldo.add(empresa);
-        
-        return empresasRespaldo;
-    }
-    
-    /**
-     * Genera datos básicos de participación mensual como último recurso
-     */
-    private Map<String, Map<String, Integer>> generarDatosParticipacionMensualRespaldo() {
-        Map<String, Map<String, Integer>> participacionRespaldo = new LinkedHashMap<>();
-        LocalDateTime ahora = LocalDateTime.now();
-        
-        // Generar datos para los últimos 6 meses con al menos una empresa
-        for (int i = 5; i >= 0; i--) {
-            LocalDateTime mes = ahora.minusMonths(i);
-            String clave = mes.getYear() + "-" + String.format("%02d", mes.getMonthValue());
-            
-            Map<String, Integer> datosMes = new HashMap<>();
-            datosMes.put("Empresa ejemplo", 1);
-            
-            participacionRespaldo.put(clave, datosMes);
-        }
-        
-        return participacionRespaldo;
-    }
-    
-    /**
-     * Genera datos dummy de actividad para casos de error
-     */
-    private List<Map<String, Object>> generarActividadDummy() {
-        List<Map<String, Object>> actividad = new ArrayList<>();
-        LocalDateTime hoy = LocalDateTime.now();
-        
-        // Nombres para los días de la semana
-        String[] diasSemana = {"Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"};
-        
-        for (int i = 6; i >= 0; i--) {
-            LocalDateTime dia = hoy.minus(i, ChronoUnit.DAYS);
-            Map<String, Object> datos = new HashMap<>();
-            datos.put("fecha", diasSemana[dia.getDayOfWeek().getValue() - 1]);
-            datos.put("actividades", 0);
-            datos.put("diaSemana", dia.getDayOfWeek().toString());
-            actividad.add(datos);
-        }
-        
-        return actividad;
     }
     
     /**
@@ -401,6 +391,63 @@ public class EstadisticasController {
         if (!datos.containsKey("tendenciaProyectos")) datos.put("tendenciaProyectos", 0.0);
         if (!datos.containsKey("tendenciaDesafios")) datos.put("tendenciaDesafios", 0.0);
         if (!datos.containsKey("tendenciaEmpresas")) datos.put("tendenciaEmpresas", 0.0);
+        
+        // Convertir objetos Long/Integer a primitivos para evitar problemas de serialización
+        for (String clave : new String[] {"completados", "enProgreso", "sinComenzar"}) {
+            if (datos.containsKey(clave) && datos.get(clave) instanceof Number) {
+                datos.put(clave, ((Number)datos.get(clave)).longValue());
+            }
+        }
+        
+        // Procesar el mapa de proyectos por mes
+        if (datos.containsKey("proyectosPorMes") && datos.get("proyectosPorMes") instanceof Map) {
+            Map<String, Object> proyectosPorMes = (Map<String, Object>) datos.get("proyectosPorMes");
+            Map<String, Long> proyectosPorMesPrimitivos = new HashMap<>();
+            
+            for (Map.Entry<String, Object> entry : proyectosPorMes.entrySet()) {
+                if (entry.getValue() instanceof Number) {
+                    proyectosPorMesPrimitivos.put(entry.getKey(), ((Number)entry.getValue()).longValue());
+                } else if (entry.getValue() instanceof String) {
+                    try {
+                        proyectosPorMesPrimitivos.put(entry.getKey(), Long.parseLong((String)entry.getValue()));
+                    } catch (NumberFormatException e) {
+                        proyectosPorMesPrimitivos.put(entry.getKey(), 0L);
+                    }
+                } else {
+                    proyectosPorMesPrimitivos.put(entry.getKey(), 0L);
+                }
+            }
+            
+            datos.put("proyectosPorMes", proyectosPorMesPrimitivos);
+        }
+        
+        // Procesar listas de objetos
+        procesarListaDeMaps(datos, "actividad", "actividades");
+        procesarListaDeMaps(datos, "empresasRanking", "usuarios", "proyectos", "puntos");
+        procesarListaDeMaps(datos, "forosActivos", "totalComentarios");
+    }
+    
+    /**
+     * Procesa una lista de mapas para convertir sus valores a primitivos
+     */
+    private void procesarListaDeMaps(Map<String, Object> datos, String claveLista, String... clavesValores) {
+        if (datos.containsKey(claveLista) && datos.get(claveLista) instanceof List) {
+            List<Map<String, Object>> lista = (List<Map<String, Object>>) datos.get(claveLista);
+            
+            for (Map<String, Object> item : lista) {
+                for (String claveValor : clavesValores) {
+                    if (item.containsKey(claveValor) && item.get(claveValor) instanceof Number) {
+                        Number valor = (Number) item.get(claveValor);
+                        // Determinar si es entero o decimal
+                        if (valor instanceof Integer || valor instanceof Long) {
+                            item.put(claveValor, valor.longValue());
+                        } else {
+                            item.put(claveValor, valor.doubleValue());
+                        }
+                    }
+                }
+            }
+        }
     }
     
     /**
@@ -415,6 +462,9 @@ public class EstadisticasController {
                 } catch (NumberFormatException e) {
                     datos.put(clave, 0L);
                 }
+            } else if (valor instanceof Number) {
+                // Asegurar que sea un tipo primitivo
+                datos.put(clave, ((Number)valor).longValue());
             }
         } else {
             datos.put(clave, 0L);

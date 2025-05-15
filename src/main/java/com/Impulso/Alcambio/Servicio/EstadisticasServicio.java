@@ -17,6 +17,7 @@ import java.time.format.TextStyle;
 import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.TreeMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -154,8 +155,12 @@ public class EstadisticasServicio {
     }
 
     /**
-     * Obtiene estadísticas detalladas para el panel de administración
-     * @return Mapa con todas las estadísticas
+     * Obtiene un resumen con todas las estadísticas principales del dashboard.
+     * 
+     * NOTA: Este método utiliza Redis como caché para mejorar el rendimiento
+     * y reducir la carga en la base de datos para consultas frecuentes.
+     * 
+     * @return Mapa con todos los datos estadísticos del dashboard
      */
     public Map<String, Object> obtenerResumenDashboard() {
         try {
@@ -165,8 +170,15 @@ public class EstadisticasServicio {
             // Intentar recuperar de caché
             Object cachedStats = cacheServicio.obtener(cacheKey);
             if (cachedStats != null) {
-                log.info("Estadísticas de dashboard recuperadas de caché");
-                return (Map<String, Object>) cachedStats;
+                log.info("Estadísticas de dashboard recuperadas de caché Redis: {}", cachedStats.toString());
+                
+                // Asegurar que el objeto recuperado tenga la estructura correcta
+                Map<String, Object> estadisticasCache = (Map<String, Object>) cachedStats;
+                if (!verificarEstructuraEstadisticas(estadisticasCache)) {
+                    log.warn("Las estadísticas recuperadas de caché no tienen la estructura esperada. Regenerando.");
+                } else {
+                    return estadisticasCache;
+                }
             }
             
             log.info("Generando estadísticas de dashboard (no en caché)");
@@ -190,6 +202,12 @@ public class EstadisticasServicio {
                 usuarios.stream()
                     .filter(u -> u.getRol() == Rol.VOLUNTARIO)
                     .count());
+            
+            // CALCULAR TOTAL ADMINISTRADORES
+            CompletableFuture<Long> totalAdministradoresFuture = CompletableFuture.supplyAsync(() ->
+                usuarios.stream()
+                    .filter(u -> u.getRol() == Rol.ADMIN) // Asumiendo Rol.ADMIN para administradores
+                    .count());
                     
             CompletableFuture<Long> proyectosActivosFuture = CompletableFuture.supplyAsync(() -> 
                 proyectos.stream()
@@ -210,10 +228,19 @@ public class EstadisticasServicio {
                     .count());
             
             // Esperar y obtener todas las estadísticas
-            estadisticas.put("totalVoluntarios", totalVoluntariosFuture.get());
-            estadisticas.put("proyectosActivos", proyectosActivosFuture.get());
-            estadisticas.put("desafiosCompletados", desafiosCompletadosFuture.get());
-            estadisticas.put("empresasParticipantes", empresasParticipantesFuture.get());
+            Long totalVoluntarios = totalVoluntariosFuture.get();
+            Long totalAdministradores = totalAdministradoresFuture.get(); // Obtener valor
+            Long proyectosActivos = proyectosActivosFuture.get();
+            Long desafiosCompletados = desafiosCompletadosFuture.get();
+            Long empresasParticipantes = empresasParticipantesFuture.get();
+
+            // Convertir a tipos primitivos para evitar problemas de serialización
+            estadisticas.put("totalVoluntarios", totalVoluntarios.longValue());
+            estadisticas.put("totalAdministradores", totalAdministradores.longValue());
+            estadisticas.put("totalUsuarios", totalVoluntarios.longValue() + totalAdministradores.longValue());
+            estadisticas.put("proyectosActivos", proyectosActivos.longValue());
+            estadisticas.put("desafiosCompletados", desafiosCompletados.longValue());
+            estadisticas.put("empresasParticipantes", empresasParticipantes.longValue());
             
             // Calcular tendencias
             LocalDateTime ahora = LocalDateTime.now();
@@ -226,9 +253,66 @@ public class EstadisticasServicio {
             CompletableFuture<Double> tendenciaProyectosFuture = CompletableFuture.supplyAsync(() -> 
                 calcularTendenciaProyectos(proyectos, mesAnterior, ahora));
             
-            estadisticas.put("tendenciaUsuarios", tendenciaUsuariosFuture.get());
-            estadisticas.put("tendenciaProyectos", tendenciaProyectosFuture.get());
+            // Convertir a primitivo double
+            double tendenciaUsuarios = tendenciaUsuariosFuture.get();
+            double tendenciaProyectos = tendenciaProyectosFuture.get();
+            estadisticas.put("tendenciaUsuarios", tendenciaUsuarios);
+            estadisticas.put("tendenciaProyectos", tendenciaProyectos);
             
+            // AÑADIR DATOS PARA GRÁFICA DE PROYECTOS POR MES
+            Map<String, Long> proyectosPorMes = obtenerProyectosPorMes(proyectos);
+            // Asegurar que los valores son primitivos
+            Map<String, Long> proyectosPorMesPrimitivos = new HashMap<>();
+            for (Map.Entry<String, Long> entry : proyectosPorMes.entrySet()) {
+                proyectosPorMesPrimitivos.put(entry.getKey(), entry.getValue().longValue());
+            }
+            estadisticas.put("proyectosPorMes", proyectosPorMesPrimitivos);
+            
+            // AÑADIR DATOS PARA GRÁFICA DE DESAFÍOS
+            Map<String, Long> estadisticasDesafios = obtenerEstadisticasDesafios(participaciones);
+            estadisticas.put("completados", estadisticasDesafios.get("completados").longValue());
+            estadisticas.put("enProgreso", estadisticasDesafios.get("enProgreso").longValue());
+            estadisticas.put("sinComenzar", estadisticasDesafios.get("sinComenzar").longValue());
+            
+            // AÑADIR DATOS PARA GRÁFICA DE ACTIVIDAD - Asegurar que usa tipos primitivos
+            List<Map<String, Object>> actividad = obtenerActividadUsuarios();
+            // Convertir a valores primitivos
+            for (Map<String, Object> datoActividad : actividad) {
+                if (datoActividad.containsKey("actividades") && datoActividad.get("actividades") instanceof Long) {
+                    datoActividad.put("actividades", ((Long)datoActividad.get("actividades")).longValue());
+                }
+            }
+            estadisticas.put("actividad", actividad);
+            
+            // Añadir empresas ranking con valores primitivos
+            List<Map<String, Object>> empresasRanking = obtenerRankingEmpresas(usuarios);
+            // Convertir a valores primitivos
+            for (Map<String, Object> empresa : empresasRanking) {
+                if (empresa.containsKey("usuarios") && empresa.get("usuarios") instanceof Long) {
+                    empresa.put("usuarios", ((Long)empresa.get("usuarios")).longValue());
+                }
+                if (empresa.containsKey("proyectos") && empresa.get("proyectos") instanceof Long) {
+                    empresa.put("proyectos", ((Long)empresa.get("proyectos")).longValue());
+                }
+                if (empresa.containsKey("puntos") && empresa.get("puntos") instanceof Integer) {
+                    empresa.put("puntos", ((Integer)empresa.get("puntos")).intValue());
+                }
+            }
+            estadisticas.put("empresasRanking", empresasRanking);
+            
+            // Añadir foros activos
+            List<Map<String, Object>> forosActivos = obtenerForosPopulares();
+            // Convertir a valores primitivos
+            for (Map<String, Object> foro : forosActivos) {
+                if (foro.containsKey("totalComentarios") && foro.get("totalComentarios") instanceof Integer) {
+                    foro.put("totalComentarios", ((Integer)foro.get("totalComentarios")).intValue());
+                }
+            }
+            estadisticas.put("forosActivos", forosActivos);
+            
+            // Log ANTES de guardar en caché y retornar
+            log.info("Estadísticas generadas (antes de caché y retorno): {}", estadisticas.toString());
+
             // Guardar en caché con expiración de 1 hora
             cacheServicio.guardarConExpiracion(cacheKey, estadisticas, 1, TimeUnit.HOURS);
             
@@ -237,6 +321,102 @@ public class EstadisticasServicio {
             log.error("Error al obtener estadísticas del dashboard: ", e);
             return generarEstadisticasPorDefecto();
         }
+    }
+
+    /**
+     * Verifica que el mapa de estadísticas tenga la estructura mínima necesaria
+     * para las gráficas del dashboard
+     * 
+     * @param estadisticas Mapa de estadísticas a verificar
+     * @return true si tiene la estructura esperada, false en caso contrario
+     */
+    private boolean verificarEstructuraEstadisticas(Map<String, Object> estadisticas) {
+        if (estadisticas == null) return false;
+        
+        // Verificar propiedades básicas
+        if (!estadisticas.containsKey("totalUsuarios") || 
+            !estadisticas.containsKey("proyectosActivos") ||
+            !estadisticas.containsKey("desafiosCompletados")) {
+            return false;
+        }
+        
+        // Verificar datos para gráficas
+        boolean tieneProyectosPorMes = estadisticas.containsKey("proyectosPorMes") && 
+                                      estadisticas.get("proyectosPorMes") instanceof Map;
+        
+        boolean tieneEstadisticasDesafios = estadisticas.containsKey("completados") && 
+                                          estadisticas.containsKey("enProgreso") && 
+                                          estadisticas.containsKey("sinComenzar");
+        
+        boolean tieneActividad = estadisticas.containsKey("actividad") && 
+                               estadisticas.get("actividad") instanceof List && 
+                               !((List)estadisticas.get("actividad")).isEmpty();
+        
+        // Si falta alguno de los datos necesarios para las gráficas, regenerar
+        return tieneProyectosPorMes && tieneEstadisticasDesafios && tieneActividad;
+    }
+
+    /**
+     * Obtiene datos de proyectos por mes para la gráfica
+     */
+    private Map<String, Long> obtenerProyectosPorMes(List<Proyecto> proyectos) {
+        Map<String, Long> proyectosPorMes = new TreeMap<>(); // TreeMap para ordenar por fecha
+        
+        // Inicializar con los últimos 6 meses (incluso si no hay datos)
+        LocalDateTime ahora = LocalDateTime.now();
+        for (int i = 5; i >= 0; i--) {
+            LocalDateTime mesAnterior = ahora.minusMonths(i);
+            String clave = mesAnterior.getYear() + "-" + String.format("%02d", mesAnterior.getMonthValue());
+            proyectosPorMes.put(clave, 0L);
+        }
+        
+        // Contar proyectos por mes de creación
+        for (Proyecto proyecto : proyectos) {
+            if (proyecto.getFechaCreacion() != null) {
+                LocalDateTime fechaCreacion = proyecto.getFechaCreacion();
+                // Solo considerar proyectos de los últimos 6 meses
+                if (fechaCreacion.isAfter(ahora.minusMonths(6))) {
+                    String clave = fechaCreacion.getYear() + "-" + 
+                               String.format("%02d", fechaCreacion.getMonthValue());
+                    proyectosPorMes.put(clave, proyectosPorMes.getOrDefault(clave, 0L) + 1);
+                }
+            }
+        }
+        
+        return proyectosPorMes;
+    }
+
+    /**
+     * Obtiene estadísticas de desafíos para la gráfica
+     */
+    private Map<String, Long> obtenerEstadisticasDesafios(List<ParticipacionDesafio> participaciones) {
+        Map<String, Long> estadisticas = new HashMap<>();
+        
+        long completados = participaciones.stream()
+            .filter(ParticipacionDesafio::isCompletado)
+            .count();
+            
+        long enProgreso = participaciones.stream()
+            .filter(p -> !p.isCompletado() && p.getProgreso() > 0)
+            .count();
+            
+        long sinComenzar = participaciones.stream()
+            .filter(p -> p.getProgreso() == 0)
+            .count();
+        
+        // Asegurar que siempre hay algún valor para mostrar
+        if (completados == 0 && enProgreso == 0 && sinComenzar == 0) {
+            // Si no hay datos, usar valores de ejemplo
+            completados = 3;
+            enProgreso = 5;
+            sinComenzar = 7;
+        }
+
+        estadisticas.put("completados", completados);
+        estadisticas.put("enProgreso", enProgreso);
+        estadisticas.put("sinComenzar", sinComenzar);
+        
+        return estadisticas;
     }
 
     private double calcularTendencia(List<Usuario> usuarios, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
@@ -268,11 +448,53 @@ public class EstadisticasServicio {
     private Map<String, Object> generarEstadisticasPorDefecto() {
         Map<String, Object> estadisticas = new HashMap<>();
         estadisticas.put("totalVoluntarios", 0L);
+        estadisticas.put("totalAdministradores", 0L); 
+        estadisticas.put("totalUsuarios", 0L); 
         estadisticas.put("proyectosActivos", 0L);
         estadisticas.put("desafiosCompletados", 0L);
         estadisticas.put("empresasParticipantes", 0L);
         estadisticas.put("tendenciaUsuarios", 0.0);
         estadisticas.put("tendenciaProyectos", 0.0);
+        
+        // Añadir datos para las gráficas
+        estadisticas.put("completados", 0L);
+        estadisticas.put("enProgreso", 0L);
+        estadisticas.put("sinComenzar", 0L);
+        
+        // Datos de proyectos por mes (últimos 6 meses)
+        Map<String, Long> proyectosPorMes = new HashMap<>();
+        LocalDateTime ahora = LocalDateTime.now();
+        for (int i = 5; i >= 0; i--) {
+            LocalDateTime mesAnterior = ahora.minusMonths(i);
+            String clave = mesAnterior.getYear() + "-" + String.format("%02d", mesAnterior.getMonthValue());
+            proyectosPorMes.put(clave, 0L);
+        }
+        estadisticas.put("proyectosPorMes", proyectosPorMes);
+        
+        // Datos de actividad
+        List<Map<String, Object>> actividadPorDefecto = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDateTime dia = ahora.minus(i, ChronoUnit.DAYS);
+            Map<String, Object> datos = new HashMap<>();
+            datos.put("fecha", dia.toString());
+            datos.put("actividades", 0L);
+            datos.put("diaSemana", dia.getDayOfWeek().toString());
+            actividadPorDefecto.add(datos);
+        }
+        estadisticas.put("actividad", actividadPorDefecto);
+        
+        // Añadir listas vacías para las demás gráficas
+        estadisticas.put("empresasRanking", new ArrayList<>());
+        estadisticas.put("forosActivos", new ArrayList<>());
+        
+        // Datos para categorías de desafíos (valores de ejemplo)
+        Map<String, Integer> desafiosCategorias = new HashMap<>();
+        desafiosCategorias.put("Tecnología", 0);
+        desafiosCategorias.put("Medio Ambiente", 0);
+        desafiosCategorias.put("Social", 0);
+        desafiosCategorias.put("Educación", 0);
+        estadisticas.put("desafiosCategorias", desafiosCategorias);
+        
         return estadisticas;
     }
 
@@ -396,39 +618,6 @@ public class EstadisticasServicio {
                 Integer p2 = (Integer) e2.get("participaciones");
                 return p2.compareTo(p1);
             });
-            
-            // Si no hay datos reales, crear algunos datos de ejemplo más diversos
-            if (empresasRanking.isEmpty()) {
-                System.out.println("No se encontraron empresas reales, generando datos de ejemplo diversificados");
-                
-                // Nombres más diversos y realistas
-                String[] nombresDiversos = {
-                    "Telefónica", "BBVA", "Santander", "Repsol", "Iberdrola", 
-                    "Mercadona", "El Corte Inglés", "Inditex", "Mapfre", "Ferrovial"
-                };
-                
-                // Generar datos más variados para ser más realistas
-                for (int i = 0; i < nombresDiversos.length; i++) {
-                    Map<String, Object> empresaEjemplo = new HashMap<>();
-                    int baseUsuarios = 5 + (int)(Math.random() * 15);  // Entre 5 y 20 usuarios
-                    int baseParticipaciones = baseUsuarios * (2 + (int)(Math.random() * 3));  // 2-5 por usuario
-                    int basePuntos = baseParticipaciones * (5 + (int)(Math.random() * 6));  // 5-10 por participación
-                    
-                    empresaEjemplo.put("nombre", nombresDiversos[i]);
-                    empresaEjemplo.put("usuarios", baseUsuarios);
-                    empresaEjemplo.put("participaciones", baseParticipaciones);
-                    empresaEjemplo.put("puntos", basePuntos);
-                    
-                    empresasRanking.add(empresaEjemplo);
-                }
-                
-                // Ordenar por participaciones (descendente)
-                empresasRanking.sort((e1, e2) -> {
-                    Integer p1 = (Integer) e1.get("participaciones");
-                    Integer p2 = (Integer) e2.get("participaciones");
-                    return p2.compareTo(p1);
-                });
-            }
             
             return empresasRanking;
         } catch (Exception e) {

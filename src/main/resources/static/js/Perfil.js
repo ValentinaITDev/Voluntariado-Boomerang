@@ -246,10 +246,10 @@ function changePassword(oldPassword, newPassword) {
         alert('Error: No se puede cambiar la contraseña (ID de usuario desconocido).');
         return Promise.reject(new Error('ID de usuario desconocido')); // Devolver promesa rechazada
     }
-    if (!changePasswordEndpoint) {
-         alert('Error: El endpoint para cambiar la contraseña no está disponible.');
-         return Promise.reject(new Error('Endpoint no disponible'));
-    }
+    
+    // Usar el endpoint proporcionado por el backend o construir uno por defecto
+    const endpoint = userProfile?.endpoints?.cambiarPassword || `/api/usuarios/${userId}/cambiar-password`;
+    console.log(`Usando endpoint para cambio de contraseña: ${endpoint}`);
 
     const changePasswordBtn = document.querySelector('.change-password-btn');
     if(changePasswordBtn) {
@@ -257,14 +257,14 @@ function changePassword(oldPassword, newPassword) {
          changePasswordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cambiando...';
     }
 
-    return fetch(changePasswordEndpoint, {
+    return fetch(endpoint, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            contrasenaActual: oldPassword,
-            nuevaContrasena: newPassword
+            oldPassword: oldPassword,
+            newPassword: newPassword
         })
     })
     .then(function(response) {
@@ -551,9 +551,13 @@ async function loadUserProjects() {
         const profileResponse = await fetch('/api/usuarios/me');
         const profileData = await profileResponse.json();
         
+        console.log("Perfil cargado:", profileData);
+        
         // Fetch user's projects
         const projectsResponse = await fetch(`/api/usuarios/${profileData.id}/proyectos`);
-        const projectIds = await projectsResponse.json();
+        const projectsData = await projectsResponse.json();
+        
+        console.log("Datos de proyectos recibidos:", projectsData);
         
         // Container for active and completed projects
         const activosContainer = document.getElementById('proyectos-activos-container');
@@ -563,57 +567,84 @@ async function loadUserProjects() {
         activosContainer.innerHTML = '';
         completadosContainer.innerHTML = '';
         
-        // If no projects, show message
-        if (!projectIds || projectIds.length === 0) {
-            activosContainer.innerHTML = '<div class="no-projects">No hay proyectos activos</div>';
-            completadosContainer.innerHTML = '<div class="no-projects">No hay proyectos completados</div>';
+        // Counters for active and completed projects
+        let activosCount = 0;
+        let completadosCount = 0;
+        
+        // Check if we have projects and if it's an array
+        if (!projectsData || (Array.isArray(projectsData) && projectsData.length === 0)) {
+            activosContainer.innerHTML = '<div class="no-data">No hay proyectos activos asociados.</div>';
+            completadosContainer.innerHTML = '<div class="no-data">No hay proyectos completados asociados.</div>';
             return;
         }
         
-        // Fetch details for each project
-        for (const projectId of projectIds) {
-            const projectResponse = await fetch(`/api/proyectos/${projectId}`);
-            const project = await projectResponse.json();
+        // Handle different response formats - either direct project objects or just IDs
+        const projects = Array.isArray(projectsData) ? projectsData : [projectsData];
+        
+        // Process each project
+        for (let i = 0; i < projects.length; i++) {
+            let project = projects[i];
             
-            const projectCard = createProjectCard(project);
+            // If we only got IDs, fetch the full project data
+            if (typeof project === 'number' || typeof project === 'string') {
+                const projectId = project;
+                console.log(`Obteniendo detalles del proyecto ${projectId}...`);
+                const projectResponse = await fetch(`/api/proyectos/${projectId}`);
+                project = await projectResponse.json();
+                console.log(`Proyecto ${projectId} obtenido:`, project);
+            }
+            
+            // Ensure project has all required fields with default values if missing
+            project = {
+                id: project.id || project.proyectoId || 'N/A',
+                nombre: project.nombre || 'Proyecto sin nombre',
+                descripcion: project.descripcion || 'Descripción no disponible',
+                estado: project.estado || 'ACTIVO',
+                imagenUrl: project.imagenUrl || null,
+                fechaCreacion: project.fechaCreacion || new Date().toISOString(),
+                ...project
+            };
+            
+            // Create project card
+            const estado = project.estado === 'COMPLETADO' ? 'Completado' : 'En curso';
+            const projectCard = createProjectCard(project, estado);
             
             // Add to appropriate container based on status
             if (project.estado === 'COMPLETADO') {
                 completadosContainer.appendChild(projectCard);
+                completadosCount++;
             } else {
                 activosContainer.appendChild(projectCard);
+                activosCount++;
             }
         }
+        
+        // Update counters if no projects were found
+        if (activosCount === 0) {
+            activosContainer.innerHTML = '<div class="no-data">No hay proyectos activos asociados.</div>';
+        }
+        if (completadosCount === 0) {
+            completadosContainer.innerHTML = '<div class="no-data">No hay proyectos completados asociados.</div>';
+        }
+        
+        // Update total projects count in profile stats
+        const totalProyectosEl = document.getElementById('total-proyectos');
+        if (totalProyectosEl) {
+            totalProyectosEl.textContent = activosCount + completadosCount;
+        }
+        
     } catch (error) {
         console.error('Error loading projects:', error);
-        document.getElementById('proyectos-activos-container').innerHTML = 
-            '<div class="error-message">Error al cargar los proyectos</div>';
+        const activosContainer = document.getElementById('proyectos-activos-container');
+        const completadosContainer = document.getElementById('proyectos-completados-container');
+        
+        if (activosContainer) {
+            activosContainer.innerHTML = '<div class="error-message">Error al cargar los proyectos</div>';
+        }
+        if (completadosContainer) {
+            completadosContainer.innerHTML = '<div class="error-message">Error al cargar los proyectos</div>';
+        }
     }
-}
-
-// Function to create a project card
-function createProjectCard(project) {
-    const card = document.createElement('div');
-    card.className = 'project-card';
-    
-    card.innerHTML = `
-        <div class="project-header">
-            <h3>${project.nombre}</h3>
-            <span class="project-status ${project.estado.toLowerCase()}">${project.estado}</span>
-        </div>
-        <p class="project-description">${project.descripcion}</p>
-        <div class="project-footer">
-            <span class="project-date">
-                <i class="fas fa-calendar"></i>
-                ${new Date(project.fechaCreacion).toLocaleDateString()}
-            </span>
-            <a href="/proyectos/${project.id}" class="view-project-btn">
-                <i class="fas fa-eye"></i> Ver Proyecto
-            </a>
-        </div>
-    `;
-    
-    return card;
 }
 
 // Add this to your existing document.addEventListener('DOMContentLoaded', ...)

@@ -8,15 +8,28 @@
 let initializationAttempts = 0;
 const MAX_INIT_ATTEMPTS = 3;
 
+// Referencias a elementos DOM frecuentemente utilizados
+const DOM = {
+    // Se inicializarán en la función initDOMReferences
+    form: null,
+    formContainer: null,
+    newChallengeButton: null,
+    challengesGrid: null,
+    formElements: {}
+};
+
 // Punto de entrada principal
 function initializeChallenges() {
     console.log("▶️ Inicializando módulo de desafíos...");
     
     try {
+        // Inicializar referencias DOM
+        initDOMReferences();
+        
         // Configurar botón de nuevo desafío
         setupNewChallengeButton();
         
-        // Configurar formulario de desafíos
+        // Configurar formulario de desafíos usando delegación de eventos
         setupChallengeForm();
         
         // Configurar botones de cierre del formulario
@@ -50,65 +63,143 @@ function initializeChallenges() {
     }
 }
 
+/**
+ * Inicializa referencias DOM para optimizar el rendimiento
+ */
+function initDOMReferences() {
+    console.log("🔍 Inicializando referencias DOM");
+    
+    DOM.form = document.getElementById('newChallengeForm');
+    DOM.formContainer = document.getElementById('challengeForm');
+    DOM.newChallengeButton = document.querySelector('.add-challenge-btn');
+    DOM.challengesGrid = document.querySelector('.challenges-grid');
+    
+    // Referencias a elementos del formulario para reducir lookups repetitivos
+    if (DOM.form) {
+        DOM.formElements = {
+            name: document.getElementById('challengeName'),
+            description: document.getElementById('challengeDescription'),
+            startDate: document.getElementById('challengeStartDate'),
+            endDate: document.getElementById('challengeEndDate'),
+            points: document.getElementById('challengeRewardPoints'),
+            type: document.getElementById('challengeType'),
+            project: document.getElementById('challengeProject'),
+            forum: document.getElementById('challengeForum'),
+            conditionType: document.getElementById('challengeConditionType'),
+            forumSelectGroup: document.getElementById('forumSelectGroup')
+        };
+    }
+    
+    // Verificar que se encontraron los elementos principales
+    if (!DOM.form) console.warn("⚠️ No se encontró el formulario de desafíos");
+    if (!DOM.formContainer) console.warn("⚠️ No se encontró el contenedor del formulario");
+    if (!DOM.newChallengeButton) console.warn("⚠️ No se encontró el botón de nuevo desafío");
+    if (!DOM.challengesGrid) console.warn("⚠️ No se encontró la cuadrícula de desafíos");
+}
+
 // Configura el botón de nuevo desafío
 function setupNewChallengeButton() {
-    const newChallengeButton = document.getElementById('newChallengeButton');
-    if (!newChallengeButton) {
-        throw new Error("No se encontró el botón de nuevo desafío (ID: newChallengeButton)");
+    if (!DOM.newChallengeButton) {
+        throw new Error("No se encontró el botón de nuevo desafío (clase: add-challenge-btn)");
     }
     
     console.log("🔘 Configurando botón de nuevo desafío");
     
     // Eliminar eventos anteriores para evitar duplicados
-    newChallengeButton.removeEventListener('click', openChallengeForm);
+    DOM.newChallengeButton.removeEventListener('click', openChallengeForm);
     
     // Añadir el evento actualizado
-    newChallengeButton.addEventListener('click', function(event) {
+    DOM.newChallengeButton.addEventListener('click', function(event) {
         event.preventDefault();
         console.log("🖱️ Botón de nuevo desafío clickeado");
         openChallengeForm();
     });
     
     // Asegurarse de que el atributo onclick también llame a la función correcta
-    newChallengeButton.setAttribute('onclick', 'openChallengeForm(); return false;');
+    DOM.newChallengeButton.setAttribute('onclick', 'openChallengeForm(); return false;');
 }
 
-// Configura el formulario de desafíos
+// Configura el formulario de desafíos usando delegación de eventos
 function setupChallengeForm() {
-    const challengeForm = document.getElementById('newChallengeForm');
-    if (!challengeForm) {
+    if (!DOM.form) {
         throw new Error("No se encontró el formulario de desafíos (ID: newChallengeForm)");
     }
     
     console.log("📝 Configurando formulario de desafíos");
     
     // Eliminar eventos anteriores para evitar duplicados
-    challengeForm.removeEventListener('submit', handleChallengeSubmit);
+    DOM.form.removeEventListener('submit', handleChallengeSubmit);
     
-    // Añadir el evento actualizado
-    challengeForm.addEventListener('submit', function(event) {
+    // Añadir el evento de envío del formulario
+    DOM.form.addEventListener('submit', function(event) {
         event.preventDefault();
         console.log("📨 Formulario de desafío enviado");
         handleChallengeSubmit(event);
     });
+    
+    // Configurar delegación de eventos para elementos del formulario
+    DOM.form.addEventListener('change', handleFormElementChanges);
+}
+
+/**
+ * Maneja cambios en elementos del formulario mediante delegación de eventos
+ */
+function handleFormElementChanges(event) {
+    const target = event.target;
+    
+    // Manejar cambio en tipo de condición
+    if (target.id === 'challengeConditionType') {
+        handleConditionTypeChange(target.value);
+    }
+    // Manejar cambio en el proyecto seleccionado
+    else if (target.id === 'challengeProject') {
+        handleProjectChange(target.value);
+    }
+}
+
+/**
+ * Maneja los cambios en el tipo de condición
+ */
+function handleConditionTypeChange(value) {
+    if (!DOM.formElements.forumSelectGroup) return;
+    
+    if (value === 'COMENTAR_FORO') {
+        DOM.formElements.forumSelectGroup.style.display = 'block';
+        
+        // Cargar foros si hay un proyecto seleccionado
+        const projectId = DOM.formElements.project.value;
+        if (projectId) {
+            loadForosForProject(projectId);
+        }
+    } else {
+        DOM.formElements.forumSelectGroup.style.display = 'none';
+    }
+}
+
+/**
+ * Maneja los cambios en el proyecto seleccionado
+ */
+function handleProjectChange(projectId) {
+    if (!projectId) return;
+    
+    const conditionType = DOM.formElements.conditionType?.value;
+    if (conditionType === 'COMENTAR_FORO') {
+        loadForosForProject(projectId);
+    }
 }
 
 // Configura los botones de cierre
 function setupCloseButtons() {
     console.log("🔴 Configurando botones de cierre");
     
-    const closeButtons = document.querySelectorAll('button[onclick="closeForm()"]');
-    if (closeButtons.length === 0) {
-        console.warn("⚠️ No se encontraron botones de cierre con onclick='closeForm()'");
-    }
-    
-    closeButtons.forEach(button => {
-        button.removeAttribute('onclick');
-        button.addEventListener('click', function(event) {
+    // Usar delegación de eventos para los botones de cierre
+    document.addEventListener('click', function(event) {
+        // Verificar si el elemento clickeado es un botón de cierre
+        if (event.target.matches('button[onclick="closeForm()"]')) {
             event.preventDefault();
             console.log("🖱️ Botón de cierre clickeado");
             closeForm();
-        });
+        }
     });
 }
 
@@ -120,7 +211,58 @@ function exportGlobalFunctions() {
     window.closeForm = closeForm;
     window.handleChallengeSubmit = handleChallengeSubmit;
     window.loadChallenges = loadChallenges;
-    window.toggleChallengeForm = openChallengeForm; // Compatibilidad con función original
+    
+    // Definir toggleChallengeForm como una función propia compatible con el HTML
+    window.toggleChallengeForm = function() {
+        console.log("🔄 Llamando a toggleChallengeForm (compatibilidad)");
+        if (!DOM.formContainer) {
+            console.error("❌ No se encontró el contenedor del formulario (ID: challengeForm)");
+            return;
+        }
+        
+        if (DOM.formContainer.classList.contains('show')) {
+            // Si está visible, lo ocultamos
+            closeForm();
+        } else {
+            // Si está oculto, lo mostramos
+            openChallengeForm();
+        }
+    };
+    
+    // Función para ver detalles de un desafío
+    window.viewChallengeDetails = function(challengeId) {
+        console.log("👁️ Viendo detalles del desafío:", challengeId);
+        
+        // Verificar si existe la variable global
+        if (!window.challengesData || !Array.isArray(window.challengesData)) {
+            console.error("❌ No se encontró la variable global challengesData o no es un array");
+            alert("No se pudieron cargar los datos de los desafíos");
+            return;
+        }
+        
+        // Buscar el desafío en la lista global
+        const challenge = window.challengesData.find(c => c.id === challengeId);
+        if (!challenge) {
+            console.error(`❌ No se encontró el desafío con ID: ${challengeId}`);
+            alert('Desafío no encontrado');
+            return;
+        }
+        
+        // Por ahora, mostrar un alert con la información básica
+        // En una versión futura, se podría implementar un modal similar al de proyectos
+        alert(`
+            Título: ${challenge.nombre || challenge.titulo || 'Sin título'}
+            Descripción: ${challenge.descripcion || 'Sin descripción'}
+            Puntos: ${challenge.puntosRecompensa || challenge.puntos || 0}
+            Tipo: ${challenge.tipo || 'INDIVIDUAL'}
+            Fechas: ${new Date(challenge.fechaInicio).toLocaleDateString()} - ${new Date(challenge.fechaFin).toLocaleDateString()}
+        `);
+    };
+    
+    // También exportamos otras funciones necesarias
+    window.editChallenge = editChallenge;
+    window.deleteChallenge = deleteChallenge;
+    window.searchChallenges = searchChallenges;
 }
 
 /**
@@ -130,31 +272,53 @@ function openChallengeForm() {
     console.log("🔓 Abriendo formulario de desafíos...");
     
     // Verificar si existe el contenedor actualizado
-    const formContainer = document.getElementById('challengeFormContainer');
-    if (formContainer) {
-        formContainer.style.display = 'flex';
-        
-        // Cargar proyectos en el formulario
-        loadProjectsForChallengeForm();
-        
-        // Configurar fecha mínima como hoy
-        const today = new Date().toISOString().split('T')[0];
-        const startDate = document.getElementById('challengeStartDate');
-        const endDate = document.getElementById('challengeEndDate');
-        
-        if (startDate) startDate.min = today;
-        if (endDate) endDate.min = today;
-        
-        // Limpiar formulario
-        const challengeForm = document.getElementById('newChallengeForm');
-        if (challengeForm) challengeForm.reset();
-        
-        // Mostrar notificación amigable
-        showNotification("Complete el formulario para crear un desafío", "info");
-    } else {
-        console.error("❌ No se encontró el contenedor del formulario de desafíos (ID: challengeFormContainer)");
+    if (!DOM.formContainer) {
+        console.error("❌ No se encontró el contenedor del formulario de desafíos (ID: challengeForm)");
         alert("Error: No se pudo abrir el formulario de desafíos");
+        return;
     }
+    
+    // Mostrar el formulario
+    DOM.formContainer.classList.add('show');
+    DOM.formContainer.style.display = 'flex';
+    
+    // Cargar proyectos en el formulario
+    loadProjectsForChallengeForm();
+    
+    // Configurar fecha mínima como hoy
+    const today = new Date().toISOString().split('T')[0];
+    if (DOM.formElements.startDate) DOM.formElements.startDate.min = today;
+    if (DOM.formElements.endDate) DOM.formElements.endDate.min = today;
+    
+    // Limpiar formulario
+    if (DOM.form) DOM.form.reset();
+    
+    // Configurar selector de condición de completitud
+    const conditionTypeSelect = DOM.formElements.conditionType;
+    if (conditionTypeSelect) {
+        // Limpiar opciones anteriores
+        conditionTypeSelect.innerHTML = '';
+        
+        // Añadir opciones de tipo de condición
+        const options = [
+            { value: 'PARTICIPAR_PROYECTO', text: 'Participar en el proyecto' },
+            { value: 'COMENTAR_FORO', text: 'Comentar en el foro' },
+            { value: 'ACCION_GENERICA', text: 'Acción genérica (manual)' }
+        ];
+        
+        options.forEach(option => {
+            const optElement = document.createElement('option');
+            optElement.value = option.value;
+            optElement.textContent = option.text;
+            conditionTypeSelect.appendChild(optElement);
+        });
+        
+        // Trigger el cambio para inicializar correctamente
+        conditionTypeSelect.dispatchEvent(new Event('change'));
+    }
+    
+    // Mostrar notificación amigable
+    showNotification("Complete el formulario para crear un desafío", "info");
 }
 
 /**
@@ -163,9 +327,9 @@ function openChallengeForm() {
 function closeForm() {
     console.log("🔒 Cerrando formulario de desafíos");
     
-    const formContainer = document.getElementById('challengeFormContainer');
-    if (formContainer) {
-        formContainer.style.display = 'none';
+    if (DOM.formContainer) {
+        DOM.formContainer.classList.remove('show');
+        DOM.formContainer.style.display = 'none';
     } else {
         console.warn("⚠️ No se encontró el contenedor del formulario de desafíos para cerrarlo");
     }
@@ -237,64 +401,62 @@ function loadProjectsForChallengeForm() {
 }
 
 /**
- * Carga los foros disponibles para un proyecto seleccionado
+ * Carga los foros para un proyecto específico
+ * @param {string} projectId - ID del proyecto
+ * @param {string} targetSelector - ID del elemento select donde se cargarán los foros (opcional)
  */
-function loadForosForProject(projectId) {
-    const forumSelect = document.getElementById('challengeForum');
-    const forumError = document.getElementById('forumError');
+async function loadForosForProject(projectId, targetSelector = 'criterioForoSelect') {
+    console.log("🔄 Cargando foros para el proyecto:", projectId);
     
-    if (!forumSelect || !forumError) {
-        console.error("No se encontraron elementos del formulario de foros");
+    if (!projectId) {
+        console.error("❌ No se proporcionó un ID de proyecto válido");
         return;
     }
-
-    // Mostrar mensaje de carga
-    forumSelect.innerHTML = '<option value="">Cargando foros...</option>';
-    forumSelect.disabled = true;
-
-    fetch(`/api/foros/proyecto/${projectId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Error ${response.status} obteniendo foros`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            forumSelect.disabled = false;
-            forumSelect.innerHTML = '<option value="">Seleccione un foro</option>';
-
-            // Procesamos la respuesta correctamente, sea un array u objeto paginado
-            let forosArray = data;
-            
-            // Si es un objeto paginado con propiedad content
-            if (data && typeof data === 'object' && Array.isArray(data.content)) {
-                forosArray = data.content;
-            }
-            
-            // Si no es ninguno de los formatos esperados o está vacío
-            if (!Array.isArray(forosArray) || forosArray.length === 0) {
-                forumError.textContent = 'No hay foros disponibles para este proyecto.';
-                forumError.style.display = 'block';
-                return;
-            }
-
-            forumError.style.display = 'none';
-
-            forosArray.forEach(forum => {
-                const option = document.createElement('option');
-                option.value = forum.id;
-                // Intentar obtener el nombre del foro de forma segura
-                option.textContent = forum.titulo || forum.nombre || `Foro (ID: ${forum.id})`;
-                forumSelect.appendChild(option);
-            });
-        })
-        .catch(error => {
-            console.error('Error al cargar foros para el proyecto:', error);
-            forumSelect.disabled = false;
-            forumSelect.innerHTML = '<option value="">Error al cargar foros</option>';
-            forumError.textContent = 'Error al cargar foros. Verifique que existan foros para este proyecto.';
-            forumError.style.display = 'block';
+    
+    // Mostrar el grupo del select de foros si existe
+    const forumSelectGroup = document.getElementById('forumSelectGroup');
+    if (forumSelectGroup) {
+        forumSelectGroup.style.display = 'block';
+    }
+    
+    // Obtener el elemento select
+    const foroSelect = document.getElementById(targetSelector);
+    if (!foroSelect) {
+        console.error(`❌ No se encontró el elemento select con ID: ${targetSelector}`);
+        return;
+    }
+    
+    try {
+        // Limpiar opciones actuales
+        foroSelect.innerHTML = '<option value="" disabled selected>Cargando foros...</option>';
+        
+        // Realizar la petición a la API
+        const response = await fetch(`/api/foros/proyecto/${projectId}`);
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        const foros = await response.json();
+        
+        if (foros.length === 0) {
+            foroSelect.innerHTML = '<option value="" disabled selected>No hay foros disponibles</option>';
+            return;
+        }
+        
+        // Agregar opciones al select
+        foroSelect.innerHTML = '<option value="" disabled selected>Selecciona un foro</option>';
+        foros.forEach(foro => {
+            const option = document.createElement('option');
+            option.value = foro.id;
+            option.textContent = foro.titulo || `Foro #${foro.id}`;
+            foroSelect.appendChild(option);
         });
+        
+    } catch (error) {
+        console.error("❌ Error al cargar los foros:", error);
+        foroSelect.innerHTML = '<option value="" disabled selected>Error al cargar foros</option>';
+    }
 }
 
 /**
@@ -321,21 +483,56 @@ function handleChallengeSubmit(event) {
     const tipoSelect = document.getElementById('challengeType');
     const tipo = tipoSelect ? tipoSelect.value : 'INDIVIDUAL'; // Valor por defecto
 
+    // Obtener el proyecto y foro seleccionados
+    const proyectoId = document.getElementById('challengeProject').value;
+    const foroId = document.getElementById('challengeForum').value || null;
+
+    // Obtener el tipo de condición de completitud seleccionado
+    const conditionTypeSelect = document.getElementById('challengeConditionType');
+    let tipoCondicionCompletitud = 'ACCION_GENERICA'; // Valor por defecto
+    
+    if (conditionTypeSelect && conditionTypeSelect.value) {
+        tipoCondicionCompletitud = conditionTypeSelect.value;
+    }
+
+    // Determinar el objetivoId según el tipo de condición
+    let objetivoId = null;
+    if (tipoCondicionCompletitud === 'COMENTAR_FORO' && foroId) {
+        objetivoId = foroId;
+    } else if (tipoCondicionCompletitud === 'PARTICIPAR_PROYECTO') {
+        objetivoId = proyectoId;
+    }
+
     const challengeData = {
         nombre: document.getElementById('challengeName').value,
         descripcion: document.getElementById('challengeDescription').value,
         fechaInicio: fechaInicio,
         fechaFin: fechaFin,
-        puntosRecompensa: parseInt(document.getElementById('challengePoints').value) || 0,
-        proyectoId: document.getElementById('challengeProject').value,
+        puntosRecompensa: parseInt(document.getElementById('challengeRewardPoints').value) || 0,
+        proyectoId: proyectoId,
         tipo: tipo, // Usar el tipo seleccionado o el valor predeterminado
-        foroId: document.getElementById('challengeForum').value || null,
+        tipoCondicionCompletitud: tipoCondicionCompletitud,
+        objetivoId: objetivoId,
         criterios: [] // Array vacío por defecto
     };
 
     // Validaciones básicas antes de enviar
-    if (!challengeData.nombre || !challengeData.fechaInicio || !challengeData.fechaFin || !challengeData.tipo || !challengeData.proyectoId) {
-        showNotification('Por favor, completa los campos obligatorios: Título, Proyecto, Fecha de Inicio, Fecha de Fin y Tipo de Desafío.', 'error');
+    if (!challengeData.nombre) {
+        showNotification('Error: El título del desafío es obligatorio.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+        return;
+    }
+    
+    if (!challengeData.proyectoId) {
+        showNotification('Error: Debe seleccionar un proyecto para el desafío.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+        return;
+    }
+    
+    if (!challengeData.fechaInicio || !challengeData.fechaFin) {
+        showNotification('Error: Las fechas de inicio y fin son obligatorias.', 'error');
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
         return;
@@ -344,6 +541,14 @@ function handleChallengeSubmit(event) {
     // Validar que la fecha de fin sea posterior a la de inicio
     if (new Date(fechaInicio) >= new Date(fechaFin)) {
         showNotification('La fecha de fin debe ser posterior a la fecha de inicio.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+        return;
+    }
+
+    // Validar que si la condición es COMENTAR_FORO, se haya seleccionado un foro
+    if (tipoCondicionCompletitud === 'COMENTAR_FORO' && !foroId) {
+        showNotification('Para la condición "Comentar en el foro" debes seleccionar un foro.', 'error');
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
         return;
@@ -374,6 +579,12 @@ function handleChallengeSubmit(event) {
                         if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
                             if (text.includes('login') || text.includes('iniciar sesión')) {
                                 throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+                            } else if (response.status === 400) {
+                                throw new Error(`Error de validación: Verifique los datos del desafío (${response.status}).`);
+                            } else if (response.status === 403) {
+                                throw new Error(`Error de permisos: No tiene autorización para crear desafíos (${response.status}).`);
+                            } else if (response.status === 500) {
+                                throw new Error(`Error interno del servidor: Contacte al administrador (${response.status}).`);
                             } else {
                                 throw new Error(`Error del servidor (${response.status}). Verifica la configuración y autenticación.`);
                             }
@@ -408,8 +619,10 @@ function handleChallengeSubmit(event) {
 
 /**
  * Carga los desafíos disponibles
+ * @param {number} attemptCount - Contador de intentos (para reintentos)
  */
-function loadChallenges() {
+function loadChallenges(attemptCount = 0) {
+    const MAX_LOAD_ATTEMPTS = 3;
     const challengesGrid = document.querySelector('.challenges-grid');
     if (!challengesGrid) {
         console.error("No se encontró el contenedor de desafíos");
@@ -418,7 +631,7 @@ function loadChallenges() {
     
     challengesGrid.innerHTML = '<div class="no-data" style="text-align: center; padding: 20px; color: #666;">Cargando desafíos...</div>';
 
-    console.log("Cargando desafíos...");
+    console.log(`Cargando desafíos... (Intento ${attemptCount + 1}/${MAX_LOAD_ATTEMPTS})`);
     
     // Añadir headers de autenticación y JSON
     const fetchOptions = {
@@ -444,7 +657,20 @@ function loadChallenges() {
                         }
                     }
                     
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                    // Detallar mejor los códigos de error HTTP
+                    if (response.status === 400) {
+                        throw new Error(`Error de solicitud incorrecta (${response.status}). Verifique los parámetros.`);
+                    } else if (response.status === 401) {
+                        throw new Error(`Error de autenticación (${response.status}). Su sesión ha expirado.`);
+                    } else if (response.status === 403) {
+                        throw new Error(`Error de permisos (${response.status}). No tiene acceso a esta funcionalidad.`);
+                    } else if (response.status === 404) {
+                        throw new Error(`Recurso no encontrado (${response.status}). La API solicitada no existe.`);
+                    } else if (response.status >= 500) {
+                        throw new Error(`Error del servidor (${response.status}). Por favor intente más tarde.`);
+                    } else {
+                        throw new Error(`Error ${response.status}: ${response.statusText}`);
+                    }
                 });
             }
             
@@ -484,22 +710,44 @@ function loadChallenges() {
             console.error('Error al cargar desafíos:', error);
             let errorMessage = error.message || 'Error desconocido al cargar los desafíos';
             
-            challengesGrid.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <div style="color: #d32f2f; margin-bottom: 15px;">
-                        <i class="fas fa-exclamation-circle" style="font-size: 24px;"></i>
-                        <p style="margin-top: 10px;">${errorMessage}</p>
-                    </div>
-                    <button onclick="loadChallenges()" style="
-                        margin-top: 10px;
-                        padding: 8px 16px;
-                        background: var(--primary-color, #4caf50);
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                    "><i class="fas fa-sync-alt"></i> Reintentar</button>
-                </div>`;
+            // Sistema de reintentos mejorado
+            if (attemptCount < MAX_LOAD_ATTEMPTS - 1) {
+                const nextAttempt = attemptCount + 1;
+                const retryDelay = Math.pow(2, nextAttempt) * 500; // Backoff exponencial: 1s, 2s, 4s...
+                
+                console.log(`Reintentando cargar desafíos en ${retryDelay/1000} segundos... (Intento ${nextAttempt + 1}/${MAX_LOAD_ATTEMPTS})`);
+                
+                challengesGrid.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="color: #d32f2f; margin-bottom: 15px;">
+                            <i class="fas fa-sync fa-spin"></i>
+                            <p style="margin-top: 10px;">Error al cargar desafíos. Reintentando automáticamente...</p>
+                            <p style="font-size: 0.9em; color: #666;">Intento ${nextAttempt + 1}/${MAX_LOAD_ATTEMPTS}</p>
+                            <p style="font-size: 0.8em; color: #888;">${errorMessage}</p>
+                        </div>
+                    </div>`;
+                
+                setTimeout(() => loadChallenges(nextAttempt), retryDelay);
+            } else {
+                // Mostrar mensaje de error final después de agotar intentos
+                challengesGrid.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="color: #d32f2f; margin-bottom: 15px;">
+                            <i class="fas fa-exclamation-circle" style="font-size: 24px;"></i>
+                            <p style="margin-top: 10px;">${errorMessage}</p>
+                            <p style="font-size: 0.9em; color: #666;">Se agotaron los intentos automáticos.</p>
+                        </div>
+                        <button onclick="loadChallenges(0)" style="
+                            margin-top: 10px;
+                            padding: 8px 16px;
+                            background: var(--primary-color, #4caf50);
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        "><i class="fas fa-sync-alt"></i> Reintentar manualmente</button>
+                    </div>`;
+            }
         });
 }
 
@@ -513,7 +761,25 @@ function displayChallenges(challenges) {
         return;
     }
     
-    challengesGrid.innerHTML = ''; // Limpiar grid antes de añadir nuevos
+    // Limpiar grid antes de mostrar los resultados filtrados
+    challengesGrid.innerHTML = '';
+    
+    // Verificar si hay datos válidos
+    let challengesArray = [];
+    
+    if (challenges && Array.isArray(challenges)) {
+        challengesArray = challenges;
+    } else if (challenges && typeof challenges === 'object' && Array.isArray(challenges.content)) {
+        challengesArray = challenges.content;
+    }
+    
+    if (challengesArray.length === 0) {
+        challengesGrid.innerHTML = '<p>No se encontraron desafíos que coincidan con la búsqueda.</p>';
+        return;
+    }
+    
+    // Guardar referencia global a los datos de desafíos para que otras funciones puedan acceder
+    window.challengesData = challengesArray;
 
     let actualChallenges = [];
     if (challenges && typeof challenges === 'object' && Array.isArray(challenges.content)) {
@@ -604,6 +870,14 @@ function displayChallenges(challenges) {
             default:
                 tipoTexto = "Individual";
         }
+        
+        // Determinar texto de condición de completitud
+        let condicionTexto = "Completar manualmente";
+        if (challenge.tipoCondicionCompletitud === 'PARTICIPAR_PROYECTO') {
+            condicionTexto = "Participar en el proyecto";
+        } else if (challenge.tipoCondicionCompletitud === 'COMENTAR_FORO') {
+            condicionTexto = "Comentar en el foro";
+        }
 
         const challengeCard = document.createElement('div');
         challengeCard.id = `challenge-${challenge.id}`;
@@ -631,6 +905,9 @@ function displayChallenges(challenges) {
             </div>
             <div class="challenge-project">
                 <i class="fas fa-project-diagram"></i> Proyecto: ${proyectoNombre}
+            </div>
+            <div class="challenge-condition">
+                <i class="fas fa-check-circle"></i> Condición: ${condicionTexto}
             </div>
             <div class="challenge-estado">
                 <i class="fas fa-info-circle"></i> Estado: ${estado}
@@ -666,79 +943,206 @@ function displayChallenges(challenges) {
 }
 
 /**
- * Función para mostrar notificaciones
+ * Muestra una notificación personalizada al usuario
+ * @param {string} message - Mensaje a mostrar
+ * @param {string} type - Tipo de notificación (success, error, info, warning)
+ * @param {number} duration - Duración en milisegundos (opcional, por defecto 3000)
  */
-function showNotification(message, type) {
+function showNotification(message, type = 'info', duration = 3000) {
     console.log(`🔔 Mostrando notificación [${type}]: ${message}`);
     
-    // Verificar si la función ya existe en el ámbito global
-    if (window.showNotification && window.showNotification !== showNotification) {
-        window.showNotification(message, type);
+    // Si ya existe una función global de notificaciones, la usamos
+    if (typeof window.showNotification === 'function' && window.showNotification !== showNotification) {
+        window.showNotification(message, type, duration);
         return;
     }
     
-    // Eliminar notificaciones existentes primero
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(notification => {
-        document.body.removeChild(notification);
-    });
+    // Crear contenedor principal si no existe
+    let notificationContainer = document.getElementById('notificationContainer');
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.id = 'notificationContainer';
+        notificationContainer.style.position = 'fixed';
+        notificationContainer.style.top = '20px';
+        notificationContainer.style.right = '20px';
+        notificationContainer.style.zIndex = '9999';
+        document.body.appendChild(notificationContainer);
+    }
     
+    // Crear notificación
     const notification = document.createElement('div');
-    notification.className = `notification ${type || 'info'}`;
-    notification.style.position = 'fixed';
-    notification.style.top = '20px';
-    notification.style.right = '20px';
-    notification.style.zIndex = '10000';
-    notification.style.background = type === 'error' ? '#ff5555' : 
-                                  type === 'success' ? '#55cc55' : 
-                                  type === 'warning' ? '#ffaa55' : '#5599ff';
-    notification.style.color = 'white';
-    notification.style.padding = '15px 25px';
+    notification.classList.add('notification', type);
+    notification.style.backgroundColor = getBackgroundColor(type);
+    notification.style.color = '#fff';
     notification.style.borderRadius = '5px';
-    notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+    notification.style.padding = '10px 20px';
+    notification.style.marginBottom = '10px';
+    notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
     notification.style.transition = 'all 0.3s ease-in-out';
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateY(-20px)';
+    notification.style.cursor = 'pointer';
     
-    notification.innerHTML = `
-        <span>${message}</span>
-        <button style="background: none; border: none; color: white; margin-left: 10px; cursor: pointer;">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-
-    document.body.appendChild(notification);
-
-    // Mostrar notificación con animación
+    // Agregar ícono según tipo
+    const icon = document.createElement('i');
+    icon.className = getIconClass(type);
+    icon.style.marginRight = '10px';
+    notification.appendChild(icon);
+    
+    // Agregar mensaje
+    const messageText = document.createTextNode(message);
+    notification.appendChild(messageText);
+    
+    // Agregar notificación al contenedor
+    notificationContainer.appendChild(notification);
+    
+    // Aplicar animación de entrada
     setTimeout(() => {
         notification.style.opacity = '1';
-        notification.style.transform = 'translateY(0)';
     }, 10);
-
-    // Ocultar después de 4 segundos
-    const timeout = setTimeout(() => {
+    
+    // Auto-cerrar después del tiempo especificado
+    setTimeout(() => {
         notification.style.opacity = '0';
-        notification.style.transform = 'translateY(-20px)';
+        notification.style.transform = 'translateX(100%)';
         setTimeout(() => {
-            if (document.body.contains(notification)) {
-                document.body.removeChild(notification);
+            notificationContainer.removeChild(notification);
+        }, 300);
+    }, duration);
+    
+    // Permitir cerrar al hacer clic
+    notification.addEventListener('click', () => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            try {
+                notificationContainer.removeChild(notification);
+            } catch (e) {
+                // La notificación ya podría haber sido eliminada
             }
         }, 300);
-    }, 4000);
+    });
+    
+    // Funciones auxiliares
+    function getBackgroundColor(type) {
+        switch (type) {
+            case 'success': return '#28a745';
+            case 'error': return '#dc3545';
+            case 'warning': return '#ffc107';
+            case 'info':
+            default: return '#17a2b8';
+        }
+    }
+    
+    function getIconClass(type) {
+        switch (type) {
+            case 'success': return 'fas fa-check-circle';
+            case 'error': return 'fas fa-exclamation-circle';
+            case 'warning': return 'fas fa-exclamation-triangle';
+            case 'info':
+            default: return 'fas fa-info-circle';
+        }
+    }
+}
 
-    // Configurar botón para cerrar
-    const closeButton = notification.querySelector('button');
-    if (closeButton) {
-        closeButton.addEventListener('click', () => {
-            clearTimeout(timeout);
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateY(-20px)';
-            setTimeout(() => {
-                if (document.body.contains(notification)) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
+/**
+ * Función para editar un desafío
+ */
+function editChallenge(challengeId) {
+    console.log("✏️ Editando desafío:", challengeId);
+    
+    // Verificar si existe la variable global
+    if (!window.challengesData || !Array.isArray(window.challengesData)) {
+        console.error("❌ No se encontró la variable global challengesData o no es un array");
+        alert("No se pudieron cargar los datos de los desafíos");
+        return;
+    }
+    
+    // Buscar el desafío en la lista
+    const challenge = window.challengesData.find(c => c.id === challengeId);
+    if (!challenge) {
+        console.error(`❌ No se encontró el desafío con ID: ${challengeId}`);
+        alert('Desafío no encontrado');
+        return;
+    }
+    
+    // Abrir el formulario
+    openChallengeForm();
+    
+    // Llenar el formulario con los datos del desafío
+    document.getElementById('challengeName').value = challenge.nombre || '';
+    document.getElementById('challengeDescription').value = challenge.descripcion || '';
+    document.getElementById('challengeRewardPoints').value = challenge.puntosRecompensa || 0;
+    
+    // Asegurar que tenemos un tipo válido
+    let tipoDesafio = challenge.tipo || 'INDIVIDUAL';
+    // Sanitizar el tipo para que coincida con las opciones disponibles
+    if (!['INDIVIDUAL', 'GRUPAL', 'COMPETITIVO'].includes(tipoDesafio.toUpperCase())) {
+        tipoDesafio = 'INDIVIDUAL';
+    }
+    document.getElementById('challengeType').value = tipoDesafio;
+    
+    // Establecer fechas si existen
+    if (challenge.fechaInicio) {
+        // Formatear la fecha para el input datetime-local
+        const startDate = new Date(challenge.fechaInicio);
+        const formattedStartDate = startDate.toISOString().slice(0, 16);
+        document.getElementById('challengeStartDate').value = formattedStartDate;
+    }
+    
+    if (challenge.fechaFin) {
+        // Formatear la fecha para el input datetime-local
+        const endDate = new Date(challenge.fechaFin);
+        const formattedEndDate = endDate.toISOString().slice(0, 16);
+        document.getElementById('challengeEndDate').value = formattedEndDate;
+    }
+    
+    // Seleccionar proyecto asociado si existe
+    if (challenge.proyectoId) {
+        document.getElementById('challengeProject').value = challenge.proyectoId;
+        // Cargar foros del proyecto
+        loadForosForProject(challenge.proyectoId);
+    }
+    
+    // Guardar ID del desafío en edición
+    document.getElementById('newChallengeForm').dataset.editingChallengeId = challengeId;
+}
+
+/**
+ * Confirma la eliminación de un desafío
+ */
+function confirmDeleteChallenge(challengeId) {
+    if (confirm('¿Estás seguro de que deseas eliminar este desafío? Esta acción no se puede deshacer.')) {
+        deleteChallenge(challengeId);
+    }
+}
+
+/**
+ * Elimina un desafío
+ */
+async function deleteChallenge(challengeId) {
+    console.log("🗑️ Eliminando desafío:", challengeId);
+    try {
+        const response = await fetch(`/api/desafios/${challengeId}`, {
+            method: 'DELETE'
         });
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        // Eliminar el desafío de la lista
+        if (window.challengesData) {
+            window.challengesData = window.challengesData.filter(challenge => challenge.id !== challengeId);
+        }
+        
+        // Actualizar la vista
+        displayChallenges(window.challengesData);
+        
+        // Mostrar notificación
+        showNotification('Desafío eliminado correctamente', 'success');
+        
+    } catch (error) {
+        console.error('Error al eliminar desafío:', error);
+        showNotification(`Error al eliminar el desafío: ${error.message}`, 'error');
     }
 }
 

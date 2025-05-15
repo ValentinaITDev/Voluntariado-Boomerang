@@ -37,6 +37,15 @@ public class Usuario {
     // Cache de estadísticas para evitar cálculos frecuentes
     private Map<String, Object> cacheEstadisticas = new HashMap<>();
     
+    // Atributos para manejo de baneo
+    private boolean baneado = false;
+    private boolean baneoTemporal = false;
+    private LocalDateTime fechaBaneo;
+    private LocalDateTime fechaFinBaneo;
+    private String motivoBaneo;
+    private String adminBaneoId;
+    private String historialBaneos;
+    
     // CONSTRUCTOR VACIO REQUERIDO
     public Usuario() {
         this.fechaRegistro = LocalDateTime.now();
@@ -50,44 +59,6 @@ public class Usuario {
         this.numero = numero;
         this.password = password;
         this.empresa = empresa;
-    }
-
-    // Clase embebida para logros
-    public static class LogroDesbloqueado {
-        private String nombre;
-        private LocalDateTime fechaDesbloqueo;
-        private int puntosOtorgados;
-
-        public LogroDesbloqueado(String nombre, int puntosOtorgados) {
-            this.nombre = nombre;
-            this.puntosOtorgados = puntosOtorgados;
-            this.fechaDesbloqueo = LocalDateTime.now();
-        }
-
-        // Getters y Setters de LogroDesbloqueado
-        public String getNombre() {
-            return nombre;
-        }
-
-        public void setNombre(String nombre) {
-            this.nombre = nombre;
-        }
-
-        public LocalDateTime getFechaDesbloqueo() {
-            return fechaDesbloqueo;
-        }
-
-        public void setFechaDesbloqueo(LocalDateTime fechaDesbloqueo) {
-            this.fechaDesbloqueo = fechaDesbloqueo;
-        }
-
-        public int getPuntosOtorgados() {
-            return puntosOtorgados;
-        }
-
-        public void setPuntosOtorgados(int puntosOtorgados) {
-            this.puntosOtorgados = puntosOtorgados;
-        }
     }
 
     // Getters y Setters de la clase principal Usuario
@@ -196,5 +167,62 @@ public class Usuario {
     
     public Object obtenerCacheEstadisticas(String key) {
         return cacheEstadisticas.get(key);
+    }
+    
+    // Getters y setters para manejo de baneo
+    public boolean isBaneado() {
+        return baneado;
+    }
+
+    public void setBaneado(boolean baneado) {
+        this.baneado = baneado;
+    }
+
+    public boolean isBaneoTemporal() {
+        return baneoTemporal;
+    }
+
+    public void setBaneoTemporal(boolean baneoTemporal) {
+        this.baneoTemporal = baneoTemporal;
+    }
+
+    public LocalDateTime getFechaBaneo() {
+        return fechaBaneo;
+    }
+
+    public void setFechaBaneo(LocalDateTime fechaBaneo) {
+        this.fechaBaneo = fechaBaneo;
+    }
+
+    public LocalDateTime getFechaFinBaneo() {
+        return fechaFinBaneo;
+    }
+
+    public void setFechaFinBaneo(LocalDateTime fechaFinBaneo) {
+        this.fechaFinBaneo = fechaFinBaneo;
+    }
+
+    public String getMotivoBaneo() {
+        return motivoBaneo;
+    }
+
+    public void setMotivoBaneo(String motivoBaneo) {
+        this.motivoBaneo = motivoBaneo;
+    }
+
+    public String getAdminBaneoId() {
+        return adminBaneoId;
+    }
+
+    public void setAdminBaneoId(String adminBaneoId) {
+        this.adminBaneoId = adminBaneoId;
+    }
+
+    public String getHistorialBaneos() {
+        return historialBaneos;
+    }
+
+    public void setHistorialBaneos(String historialBaneos) {
+        this.historialBaneos = historialBaneos;
     }
 }

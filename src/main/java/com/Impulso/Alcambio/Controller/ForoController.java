@@ -31,6 +31,40 @@ import com.Impulso.Alcambio.Servicio.UsuarioServicio;
 
 import lombok.extern.slf4j.Slf4j;
 
+// Clase DTO para el payload de agregar comentario
+class ComentarioRequestPayload {
+    private String texto;
+    // El usuarioId se obtiene del Principal, por lo que no es estrictamente necesario aquí,
+    // pero lo mantenemos si el frontend lo envía.
+    @SuppressWarnings("unused")
+    private String usuarioId;
+
+    public String getTexto() {
+        return texto;
+    }
+
+    public void setTexto(String texto) {
+        this.texto = texto;
+    }
+
+    public void setUsuarioId(String usuarioId) {
+        this.usuarioId = usuarioId;
+    }
+}
+
+// Clase DTO para el payload de agregar respuesta
+class RespuestaRequestPayload {
+    private String contenido;
+
+    public String getContenido() {
+        return contenido;
+    }
+
+    public void setContenido(String contenido) {
+        this.contenido = contenido;
+    }
+}
+
 /**
  * Este es el controlador principal para toda la gestión de foros.
  * Aquí manejamos toda la comunicación entre el frontend y la base de datos
@@ -223,7 +257,7 @@ public class ForoController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Foro> agregarComentario(
             @PathVariable String foroId,
-            @RequestBody String contenido,
+            @RequestBody ComentarioRequestPayload payload, // Cambiado a DTO
             Principal principal) {
         
         Optional<Foro> foroOpt = foroServicio.obtenerPorId(foroId);
@@ -239,15 +273,25 @@ public class ForoController {
         Usuario usuario = usuarioOpt.get();
         Foro foro = foroOpt.get();
         
-        // Crear información del autor
+        // Crear información del autor a partir del usuario autenticado
         Foro.AutorInfo autorInfo = new Foro.AutorInfo(usuario.getId(), usuario.getNombre(), usuario.getImagenPerfil());
         
-        // Crear y añadir el comentario
-        Foro.Comentario comentario = new Foro.Comentario(contenido, autorInfo);
+        // Crear y añadir el comentario usando el texto del payload
+        Foro.Comentario comentario = new Foro.Comentario(payload.getTexto(), autorInfo);
         foro.agregarComentario(comentario);
         
-        // Guardar el foro actualizado
-        return ResponseEntity.ok(foroServicio.crearForo(foro));
+        // Guardar el foro actualizado (con el nuevo comentario)
+        // El método actualizarForo en el servicio debería manejar la persistencia del objeto foro completo.
+        Optional<Foro> foroActualizadoOpt = foroServicio.actualizarForo(foroId, foro);
+        
+        return foroActualizadoOpt
+                .map(f -> ResponseEntity.status(HttpStatus.CREATED).body(f)) // Devolver 201 CREATED con el foro actualizado
+                .orElseGet(() -> {
+                    log.error("No se pudo actualizar el foro {} después de agregar un comentario.", foroId);
+                    // Considerar si el foro no encontrado aquí es un error 500 o 404 si actualizarForo puede devolver empty()
+                    // si el foro original desapareció entre el findById y el save.
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                });
     }
     
     /**
@@ -258,56 +302,45 @@ public class ForoController {
     public ResponseEntity<?> agregarRespuesta(
             @PathVariable String foroId,
             @PathVariable String comentarioId,
-            @RequestBody String contenidoRespuesta,
+            @RequestBody RespuestaRequestPayload payload, // Cambiado a DTO
             Principal principal) {
         
         Optional<Usuario> usuarioOpt = obtenerUsuarioAutenticado(principal);
         if (usuarioOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
         Usuario usuario = usuarioOpt.get();
         
-        try {
-            // Buscar el foro
-            Optional<Foro> foroOpt = foroServicio.obtenerPorId(foroId);
-            if (foroOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            Foro foro = foroOpt.get();
-            
-            // Buscar el comentario
-            Optional<Foro.Comentario> comentarioOpt = foro.getComentarios().stream()
-                    .filter(c -> comentarioId.equals(c.getId()))
-                    .findFirst();
-            
-            if (comentarioOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Comentario no encontrado con ID: " + comentarioId);
-            }
-            
-            // Crear información del autor para la respuesta
-            Foro.AutorInfo autorInfo = new Foro.AutorInfo(usuario.getId(), usuario.getNombre(), usuario.getImagenPerfil());
-            
-            // Crear el objeto Respuesta
-            Foro.Comentario.Respuesta respuesta = new Foro.Comentario.Respuesta(contenidoRespuesta, autorInfo);
-            
-            // Añadir la respuesta al comentario
-            Foro.Comentario comentario = comentarioOpt.get();
-            comentario.agregarRespuesta(respuesta);
-            
-            // Guardar el foro actualizado
-            Foro foroActualizado = foroServicio.crearForo(foro);
-            return ResponseEntity.ok(foroActualizado);
-            
-        } catch (RuntimeException e) {
-            // Capturar errores como foro o comentario no encontrado
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            // Otros errores inesperados
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al agregar la respuesta");
+        Optional<Foro> foroOpt = foroServicio.obtenerPorId(foroId);
+        if (foroOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Foro no encontrado"));
         }
+        Foro foro = foroOpt.get();
+        
+        Optional<Foro.Comentario> comentarioPadreOpt = foro.getComentarios().stream()
+                .filter(c -> c.getId().equals(comentarioId))
+                .findFirst();
+        
+        if (comentarioPadreOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Comentario padre no encontrado"));
+        }
+        Foro.Comentario comentarioPadre = comentarioPadreOpt.get();
+        
+        Foro.AutorInfo autorInfo = new Foro.AutorInfo(usuario.getId(), usuario.getNombre(), usuario.getImagenPerfil());
+        Foro.Comentario.Respuesta nuevaRespuesta = new Foro.Comentario.Respuesta(payload.getContenido(), autorInfo);
+        comentarioPadre.agregarRespuesta(nuevaRespuesta);
+        
+        Optional<Foro> foroActualizadoOpt = foroServicio.actualizarForo(foroId, foro);
+
+        if (foroActualizadoOpt.isEmpty()) {
+            log.error("Error al actualizar el foro {} después de agregar una respuesta al comentario {}", foroId, comentarioId);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "No se pudo actualizar el foro después de agregar la respuesta"));
+        }
+
+        // Devolver la respuesta creada o el comentario/foro actualizado.
+        // Por simplicidad, devolvemos el foro completo, el frontend ya recarga los comentarios.
+        // Una mejora sería devolver solo la respuesta creada o el comentario padre actualizado.
+        return ResponseEntity.status(HttpStatus.CREATED).body(foroActualizadoOpt.get());
     }
     
     /**
@@ -463,50 +496,53 @@ public class ForoController {
             @PathVariable String foroId,
             @PathVariable String comentarioId,
             Principal principal) {
-        
+
         Optional<Usuario> usuarioOpt = obtenerUsuarioAutenticado(principal);
         if (usuarioOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
-        try {
-            // Buscar el foro
-            Optional<Foro> foroOpt = foroServicio.obtenerPorId(foroId);
-            if (foroOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            Foro foro = foroOpt.get();
-            
-            // Buscar el comentario
-            Optional<Foro.Comentario> comentarioOpt = foro.getComentarios().stream()
-                    .filter(c -> comentarioId.equals(c.getId()))
-                    .findFirst();
-            
-            if (comentarioOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Comentario no encontrado con ID: " + comentarioId);
-            }
-            
-            Foro.Comentario comentario = comentarioOpt.get();
-            String usuarioId = usuarioOpt.get().getId();
-            
-            // Toggle like
-            if (comentario.getUsuariosQueDieronLike().contains(usuarioId)) {
-                comentario.quitarLike(usuarioId);
-            } else {
-                comentario.agregarLike(usuarioId);
-            }
-            
-            // Guardar el foro actualizado
-            Foro foroActualizado = foroServicio.crearForo(foro);
-            
-            return ResponseEntity.ok(foroActualizado);
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al actualizar like: " + e.getMessage());
+        String usuarioId = usuarioOpt.get().getId();
+
+        Optional<Foro> foroOpt = foroServicio.obtenerPorId(foroId);
+        if (foroOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
+        Foro foro = foroOpt.get();
+
+        Optional<Foro.Comentario> comentarioOpt = foro.getComentarios().stream()
+                .filter(c -> c.getId().equals(comentarioId))
+                .findFirst();
+
+        if (comentarioOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Comentario no encontrado"));
+        }
+        Foro.Comentario comentario = comentarioOpt.get();
+
+        // Lógica de Toggle: si ya le dio like, se lo quita; si no, se lo da.
+        boolean dioLike;
+        if (comentario.getUsuariosQueDieronLike().contains(usuarioId)) {
+            comentario.quitarLike(usuarioId);
+            dioLike = false;
+        } else {
+            comentario.agregarLike(usuarioId);
+            dioLike = true;
+        }
+
+        Optional<Foro> foroActualizadoOpt = foroServicio.actualizarForo(foroId, foro);
+
+        if (foroActualizadoOpt.isEmpty()) {
+            log.error("Error al actualizar el foro {} después de un 'like' al comentario {}", foroId, comentarioId);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "No se pudo actualizar el foro"));
+        }
+
+        // Devolver información útil para la UI
+        Map<String, Object> response = Map.of(
+            "comentarioId", comentario.getId(),
+            "likes", comentario.getLikes(),
+            "currentUserLiked", dioLike,
+            "message", "Like/unlike exitoso"
+        );
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -524,57 +560,55 @@ public class ForoController {
         if (usuarioOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+        String usuarioActualId = usuarioOpt.get().getId();
         
-        try {
-            // Buscar el foro
-            Optional<Foro> foroOpt = foroServicio.obtenerPorId(foroId);
-            if (foroOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            Foro foro = foroOpt.get();
-            
-            // Buscar el comentario
-            Optional<Foro.Comentario> comentarioOpt = foro.getComentarios().stream()
-                    .filter(c -> comentarioId.equals(c.getId()))
-                    .findFirst();
-            
-            if (comentarioOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Comentario no encontrado con ID: " + comentarioId);
-            }
-            
-            Foro.Comentario comentario = comentarioOpt.get();
-            
-            // Buscar la respuesta
-            Optional<Foro.Comentario.Respuesta> respuestaOpt = comentario.getRespuestas().stream()
-                    .filter(r -> respuestaId.equals(r.getId()))
-                    .findFirst();
-            
-            if (respuestaOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Respuesta no encontrada con ID: " + respuestaId);
-            }
-            
-            Foro.Comentario.Respuesta respuesta = respuestaOpt.get();
-            String usuarioId = usuarioOpt.get().getId();
-            
-            // Toggle like
-            if (respuesta.getUsuariosQueDieronLike().contains(usuarioId)) {
-                respuesta.quitarLike(usuarioId);
-            } else {
-                respuesta.agregarLike(usuarioId);
-            }
-            
-            // Guardar el foro actualizado
-            Foro foroActualizado = foroServicio.crearForo(foro);
-            
-            return ResponseEntity.ok(foroActualizado);
-            
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al actualizar like: " + e.getMessage());
+        Optional<Foro> foroOpt = foroServicio.obtenerPorId(foroId);
+        if (foroOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Foro no encontrado"));
         }
+        Foro foro = foroOpt.get();
+        
+        Optional<Foro.Comentario> comentarioOpt = foro.getComentarios().stream()
+                .filter(c -> c.getId().equals(comentarioId))
+                .findFirst();
+        
+        if (comentarioOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Comentario padre no encontrado"));
+        }
+        Foro.Comentario comentarioPadre = comentarioOpt.get();
+        
+        Optional<Foro.Comentario.Respuesta> respuestaOpt = comentarioPadre.getRespuestas().stream()
+                .filter(r -> r.getId().equals(respuestaId))
+                .findFirst();
+        
+        if (respuestaOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Respuesta no encontrada"));
+        }
+        Foro.Comentario.Respuesta respuesta = respuestaOpt.get();
+        
+        boolean dioLike;
+        if (respuesta.getUsuariosQueDieronLike().contains(usuarioActualId)) {
+            respuesta.quitarLike(usuarioActualId);
+            dioLike = false;
+        } else {
+            respuesta.agregarLike(usuarioActualId);
+            dioLike = true;
+        }
+        
+        Optional<Foro> foroActualizadoOpt = foroServicio.actualizarForo(foroId, foro);
+
+        if (foroActualizadoOpt.isEmpty()) {
+            log.error("Error al actualizar el foro {} después de un 'like' a la respuesta {}", foroId, respuestaId);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "No se pudo actualizar el foro"));
+        }
+        
+        Map<String, Object> response = Map.of(
+            "respuestaId", respuesta.getId(),
+            "likes", respuesta.getLikes(),
+            "currentUserLiked", dioLike,
+            "message", "Like/unlike en respuesta exitoso"
+        );
+        return ResponseEntity.ok(response);
     }
 
     /**

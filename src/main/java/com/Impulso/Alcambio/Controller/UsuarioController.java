@@ -240,7 +240,7 @@ public class UsuarioController {
             datosFallback.put("id", "usuario-no-encontrado");
             datosFallback.put("nombre", principal.getName());
             datosFallback.put("correo", principal.getName());
-            datosFallback.put("proyectosParticipados", new ArrayList<>());
+            datosFallback.put("proyectosParticipadosIds", new ArrayList<>());
             datosFallback.put("mensaje", "Usuario autenticado pero no encontrado en la base de datos");
             
             return ResponseEntity.ok(datosFallback);
@@ -285,7 +285,7 @@ public class UsuarioController {
         }
         
         // Siempre asignar los valores, incluso si son listas vacías
-        perfilCompleto.put("proyectosParticipados", usuario.getProyectosParticipadosIds() != null ? 
+        perfilCompleto.put("proyectosParticipadosIds", usuario.getProyectosParticipadosIds() != null ? 
                                                    usuario.getProyectosParticipadosIds() : 
                                                    new ArrayList<>());
         perfilCompleto.put("proyectosActivos", proyectosActivos);
@@ -349,7 +349,7 @@ public class UsuarioController {
         // URLs para actualización de perfil
         Map<String, String> endpoints = new HashMap<>();
         endpoints.put("actualizarPerfil", "/api/usuarios/" + usuario.getId());
-        endpoints.put("cambiarPassword", "/api/usuarios/" + usuario.getId() + "/cambiar-password");
+        endpoints.put("cambiarPassword", usuarioServicio.obtenerEndpointCambioPassword(usuario.getId()));
         perfilCompleto.put("endpoints", endpoints);
         
         return ResponseEntity.ok(perfilCompleto);
@@ -501,9 +501,39 @@ public class UsuarioController {
             return accesoResponse;
         }
         
-        return usuarioServicio.buscarPorId(id)
-            .map(usuario -> ResponseEntity.ok(usuario.getProyectosParticipadosIds()))
-            .orElse(ResponseEntity.notFound().build());
+        Optional<Usuario> usuarioOpt = usuarioServicio.buscarPorId(id);
+        if (usuarioOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Usuario usuario = usuarioOpt.get();
+        List<String> proyectosIds = usuario.getProyectosParticipadosIds() != null ? 
+                                   usuario.getProyectosParticipadosIds() : 
+                                   new ArrayList<>();
+                                   
+        // Obtener información completa de los proyectos
+        List<Map<String, Object>> proyectosInfo = new ArrayList<>();
+        
+        for (String proyectoId : proyectosIds) {
+            Optional<Proyecto> proyectoOpt = proyectoServicio.obtenerProyectoPorId(proyectoId);
+            if (proyectoOpt.isPresent()) {
+                Proyecto proyecto = proyectoOpt.get();
+                Map<String, Object> proyectoInfo = new HashMap<>();
+                proyectoInfo.put("id", proyecto.getId());
+                proyectoInfo.put("nombre", proyecto.getNombre());
+                proyectoInfo.put("estado", proyecto.getEstado());
+                proyectoInfo.put("fechaCreacion", proyecto.getFechaCreacion());
+                proyectoInfo.put("fechaExpiracion", proyecto.getFechaExpiracion());
+                proyectosInfo.add(proyectoInfo);
+            }
+        }
+        
+        // Devolver la lista de IDs y la información de los proyectos
+        Map<String, Object> response = new HashMap<>();
+        response.put("proyectosParticipadosIds", proyectosIds);
+        response.put("proyectosInfo", proyectosInfo);
+        
+        return ResponseEntity.ok(response);
     }
 
     /**

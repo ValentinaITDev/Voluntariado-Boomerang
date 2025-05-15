@@ -5,14 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administración de Foros - VolunteerHub</title>
-    <link rel="stylesheet" th:href="@{/foro-admin.css}">
+    <link rel="stylesheet" th:href="@{/ForoAdmin.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 </head>
 
 <body>
-    <nav class="navbar">
-        <div class="logo">
+    <!-- Sidebar vertical -->
+    <aside class="sidebar">
+        <div class="logo-container">
             <img src="/images/logo.png" alt="Boomerang Voluntariado" class="logo-img">
         </div>
         <ul class="nav-links">
@@ -22,11 +23,15 @@
             <li><a th:href="@{/admin/perfil}"><i class="fas fa-user-cog"></i>Mi Perfil</a></li>
             <li class="logout-link"><a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
         </ul>
-    </nav>
+    </aside>
+
+    <!-- Botón para menú móvil -->
     <button class="menu-toggle" id="menuToggle">
         <i class="fas fa-bars"></i>
     </button>
-    <div class="content-wrapper">
+
+    <!-- Contenido principal -->
+    <main class="main-content">
         <div class="header">
             <h1>Administración de Foros</h1>
             <p>Gestiona todos los foros y comentarios de la plataforma</p>
@@ -42,7 +47,7 @@
                     <div class="stat-info">
                         <h3>Total Foros</h3>
                         <p class="stat-value" id="totalForos">--</p>
-                        <p class="stat-diff positive">+12% <span>vs mes anterior</span></p>
+                        <p class="stat-diff">-- <span>vs mes anterior</span></p>
                     </div>
                 </div>
                 
@@ -53,7 +58,7 @@
                     <div class="stat-info">
                         <h3>Comentarios</h3>
                         <p class="stat-value" id="totalComentarios">--</p>
-                        <p class="stat-diff positive">+5% <span>vs mes anterior</span></p>
+                        <p class="stat-diff">-- <span>vs mes anterior</span></p>
                     </div>
                 </div>
                 
@@ -64,7 +69,7 @@
                     <div class="stat-info">
                         <h3>Reportes Pendientes</h3>
                         <p class="stat-value" id="reportesPendientes">--</p>
-                        <p class="stat-diff neutral">0% <span>vs mes anterior</span></p>
+                        <p class="stat-diff">-- <span>vs mes anterior</span></p>
                     </div>
                 </div>
                 
@@ -75,22 +80,13 @@
                     <div class="stat-info">
                         <h3>Usuarios Activos</h3>
                         <p class="stat-value" id="usuariosActivos">--</p>
-                        <p class="stat-diff positive">+8% <span>vs mes anterior</span></p>
+                        <p class="stat-diff">-- <span>vs mes anterior</span></p>
                     </div>
                 </div>
             </div>
             
             <div class="quick-actions">
-                <button class="action-btn" onclick="showAnnouncementModal()">
-                    <i class="fas fa-bullhorn"></i> Crear Anuncio
-                </button>
-                <button class="action-btn" onclick="showModerationQueueModal()">
-                    <i class="fas fa-tasks"></i> Ver Cola de Moderación
-                </button>
-                <button class="action-btn" onclick="showCategoryModal()">
-                    <i class="fas fa-tags"></i> Gestionar Categorías
-                </button>
-                <button class="action-btn" onclick="mostrarModalNuevoForo()">
+                <button type="button" class="action-btn" id="btnNewForum">
                     <i class="fas fa-plus-circle"></i> Nuevo Foro
                 </button>
             </div>
@@ -98,56 +94,35 @@
 
         <!-- Resto del contenido existente -->
         <div class="foros-container" id="forosContainer">
-            <h1><i class="fas fa-project-diagram"></i> Proyectos del Usuario</h1>
-
-            <div class="admin-panel">
-                <h2><i class="fas fa-star"></i> Proyectos Destacados</h2>
-                <div class="proyectos-grid">
-                    <div class="proyecto-card">
-                        <div class="proyecto-header">
-                            <h3>xxxxxxxxxxx</h3>
-                            <span class="prioridad-badge">Media Prioridad</span>
-                        </div>
-                        <div class="proyecto-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-users"></i>
-                                <span>20 Voluntarios</span>
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-clock"></i>
-                                <span>12 días restantes</span>
-                            </div>
-                        </div>
-                        <div class="proyecto-progreso">
-                            <div class="progreso-texto">Progreso 73%</div>
-                            <div class="progreso-barra">
-                                <div class="progreso-completado" style="width: 73%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="proyecto-card">
-                        <div class="proyecto-header">
-                            <h3>dddddddddddddd</h3>
-                            <span class="prioridad-badge">Media Prioridad</span>
-                        </div>
-                        <div class="proyecto-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-users"></i>
-                                <span>45 Voluntarios</span>
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-clock"></i>
-                                <span>9 días restantes</span>
-                            </div>
-                        </div>
-                        <div class="proyecto-progreso">
-                            <div class="progreso-texto">Progreso 34%</div>
-                            <div class="progreso-barra">
-                                <div class="progreso-completado" style="width: 34%;"></div>
-                            </div>
-                        </div>
-                    </div>
+            <h1><i class="fas fa-project-diagram"></i> Foros de la Plataforma</h1>
+            
+            <div class="filter-tools">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar foros...">
+                    <button id="searchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="filter-buttons">
+                    <button type="button" class="filter-btn active" data-filter="todos">
+                        <i class="fas fa-list"></i> Todos
+                    </button>
+                    <button type="button" class="filter-btn" data-filter="activos">
+                        <i class="fas fa-check-circle"></i> Activos
+                    </button>
+                    <button type="button" class="filter-btn" data-filter="reportados">
+                        <i class="fas fa-flag"></i> Reportados
+                    </button>
+                    <button type="button" class="filter-btn" data-filter="archivados">
+                        <i class="fas fa-archive"></i> Archivados
+                    </button>
+                </div>
+            </div>
+            
+            <div class="foros-list" id="forosList">
+                <!-- Los foros se cargarán dinámicamente aquí -->
+                <div class="loading-indicator">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando foros...
                 </div>
             </div>
         </div>
@@ -161,7 +136,7 @@
                     <div class="mod-tool-icon"><i class="fas fa-ban"></i></div>
                     <div class="mod-tool-info">
                         <h3>Bannear Usuario</h3>
-                        <button class="mod-tool-btn" onclick="showBanUserModal()">Gestionar</button>
+                        <button type="button" class="mod-tool-btn" id="btnBanUser">Gestionar</button>
                     </div>
                 </div>
                 
@@ -169,34 +144,18 @@
                     <div class="mod-tool-icon"><i class="fas fa-filter"></i></div>
                     <div class="mod-tool-info">
                         <h3>Filtros de Palabras</h3>
-                        <button class="mod-tool-btn" onclick="showWordFilterModal()">Configurar</button>
-                    </div>
-                </div>
-                
-                <div class="mod-tool-card">
-                    <div class="mod-tool-icon"><i class="fas fa-bullhorn"></i></div>
-                    <div class="mod-tool-info">
-                        <h3>Anuncios</h3>
-                        <button class="mod-tool-btn" onclick="showAnnouncementModal()">Crear Anuncio</button>
-                    </div>
-                </div>
-                
-                <div class="mod-tool-card">
-                    <div class="mod-tool-icon"><i class="fas fa-tasks"></i></div>
-                    <div class="mod-tool-info">
-                        <h3>Cola de Moderación</h3>
-                        <button class="mod-tool-btn" onclick="showModerationQueueModal()">Ver Cola</button>
+                        <button type="button" class="mod-tool-btn" id="btnWordFilter">Configurar</button>
                     </div>
                 </div>
             </div>
         </div>
 
-    </div>
+    </main>
     <div id="foroDetailModal" class="foro-detail">
         <div class="foro-detail-content">
             <div class="foro-header">
                 <h2 id="modalForoTitle">Cargando Título del Foro...</h2>
-                <button class="close-btn" onclick="closeForoDetail()">
+                <button type="button" class="close-btn" id="closeForoDetailBtn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -212,109 +171,22 @@
                     <div class="posts-section">
                         <h3><i class="fas fa-comments"></i> Comentarios Recientes</h3>
                         <div class="posts-container" id="modalPostsContainer">
-                            <div class="post" data-post-id="101">
-                                <div class="admin-actions">
-                                    <button class="admin-btn warning tooltip" onclick="warnPost(101)">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                        <span class="tooltip-text">Advertir</span>
-                                    </button>
-                                    <button class="admin-btn danger tooltip" onclick="confirmRestrictPost(101)">
-                                        <i class="fas fa-ban"></i>
-                                        <span class="tooltip-text">Restringir</span>
-                                    </button>
-                                    <button class="admin-btn danger tooltip" onclick="confirmDeletePost(101)">
-                                        <i class="fas fa-trash-alt"></i>
-                                        <span class="tooltip-text">Eliminar</span>
-                                    </button>
-                                </div>
-                                <div class="post-header">
-                                    <div class="user-avatar"><img src="placeholder-avatar.png" alt="Avatar"></div>
-                                    <div class="post-user-info">
-                                        <span class="post-user-name">
-                                            Ana García
-                                            <span class="user-badge badge-volunteer">Voluntario</span>
-                                        </span>
-                                        <span class="post-timestamp">hace 2 horas</span>
-                                    </div>
-                                </div>
-                                <div class="post-content">
-                                    ¡Hola a todos! Muy emocionada de unirme a este proyecto. ¿Alguien sabe dónde puedo
-                                    encontrar el cronograma actualizado?
-                                </div>
-                                <div class="post-actions">
-                                    <button class="post-action-btn"><i class="fas fa-thumbs-up"></i> 5 Me gusta</button>
-                                    <button class="post-action-btn"><i class="fas fa-reply"></i> Responder</button>
-                                </div>
-                            </div>
-
-                            <div class="post reported" data-post-id="102">
-                                <div class="admin-actions">
-                                    <button class="admin-btn success tooltip" onclick="approvePost(102)">
-                                        <i class="fas fa-check"></i>
-                                        <span class="tooltip-text">Aprobar</span>
-                                    </button>
-                                    <button class="admin-btn danger tooltip" onclick="confirmRestrictPost(102)">
-                                        <i class="fas fa-ban"></i>
-                                        <span class="tooltip-text">Restringir</span>
-                                    </button>
-                                </div>
-                                <div class="post-header">
-                                    <div class="user-avatar"><img src="placeholder-avatar2.png" alt="Avatar"></div>
-                                    <div class="post-user-info">
-                                        <span class="post-user-name">Carlos Ruiz</span>
-                                        <span class="post-timestamp">hace 1 día</span>
-                                    </div>
-                                </div>
-                                <div class="post-content">
-                                    Este comentario contiene lenguaje inapropiado y debería ser revisado. (Este es un
-                                    ejemplo de post reportado)
-                                </div>
-                                <div class="post-actions">
-                                    <button class="post-action-btn"><i class="fas fa-thumbs-up"></i> 0 Me gusta</button>
-                                    <button class="post-action-btn"><i class="fas fa-reply"></i> Responder</button>
-                                </div>
-                            </div>
-
-                            <div class="post restricted" data-post-id="103">
-                                <div class="admin-actions">
-                                    <button class="admin-btn success tooltip" onclick="unrestrictPost(103)">
-                                        <i class="fas fa-undo"></i>
-                                        <span class="tooltip-text">Quitar Restricción</span>
-                                    </button>
-                                    <button class="admin-btn danger tooltip" onclick="confirmDeletePost(103)">
-                                        <i class="fas fa-trash-alt"></i>
-                                        <span class="tooltip-text">Eliminar</span>
-                                    </button>
-                                </div>
-                                <div class="post-header">
-                                    <div class="user-avatar"><img src="placeholder-avatar3.png" alt="Avatar"></div>
-                                    <div class="post-user-info">
-                                        <span class="post-user-name">
-                                            Admin <span class="user-badge badge-admin">Admin</span>
-                                            <span class="user-badge badge-restricted">Restringido</span>
-                                        </span>
-                                        <span class="post-timestamp">hace 3 días</span>
-                                    </div>
-                                </div>
-                                <div class="post-content">
-                                    <p>Contenido original que fue restringido...</p>
-                                </div>
-                            </div>
-
+                            <!-- Comentarios dinámicos -->
                         </div>
                         <div class="pagination" id="postsPagination">
+                            <!-- Paginación -->
                         </div>
                     </div>
 
                     <div class="comment-form">
                         <div class="user-avatar">
-                            <img src="admin-avatar.png" alt="Tu Avatar">
+                            <img id="adminAvatar" src="/Perfiles/default-admin.png" alt="Tu Avatar">
                         </div>
                         <div class="comment-input-container">
                             <textarea id="newCommentAdmin" class="comment-input"
                                 placeholder="Escribe un comentario como administrador..." rows="3"></textarea>
                             <div class="comment-actions">
-                                <button class="comment-btn submit" onclick="postAdminComment()">
+                                <button type="button" class="comment-btn submit" id="postAdminCommentBtn">
                                     <i class="fas fa-paper-plane"></i> Publicar Comentario
                                 </button>
                             </div>
@@ -326,10 +198,12 @@
     </div>
     <div id="confirmActionModal" class="confirm-modal">
         <div class="confirm-content" id="confirmModalContent">
+            <!-- Contenido dinámico de confirmación -->
         </div>
     </div>
 
     <div id="notificationContainer">
+        <!-- Notificaciones dinámicas -->
     </div>
 
     <!-- Modal para Crear Nuevo Foro -->
@@ -337,50 +211,43 @@
         <div class="foro-detail-content" style="max-width: 600px;">
             <div class="foro-header">
                 <h2>Crear Nuevo Foro</h2>
-                <button class="close-btn" onclick="cerrarModalNuevoForo()">
+                <button type="button" class="close-btn" id="cerrarNuevoForoBtn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="foro-body">
                 <form id="nuevoForoForm">
-                    <div style="margin-bottom: 1.5rem;">
-                        <label for="tituloForo" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Título
-                            del Foro:</label>
-                        <input type="text" id="tituloForo"
-                            style="width: 100%; padding: 0.7rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 1rem;"
-                            placeholder="Escribe un título descriptivo...">
+                    <div class="form-group">
+                        <label for="tituloForo">Título del Foro</label>
+                        <input type="text" id="tituloForo" placeholder="Escribe un título descriptivo...">
                     </div>
 
-                    <div style="margin-bottom: 1.5rem;">
-                        <label for="descripcionForo"
-                            style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Descripción:</label>
-                        <textarea id="descripcionForo" rows="5"
-                            style="width: 100%; padding: 0.7rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 1rem; resize: vertical;"
-                            placeholder="Describe el propósito del foro..."></textarea>
+                    <div class="form-group">
+                        <label for="descripcionForo">Descripción</label>
+                        <textarea id="descripcionForo" placeholder="Describe el propósito del foro..."></textarea>
                     </div>
 
-                    <div style="margin-bottom: 1.5rem;">
-                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Configuración:</label>
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div class="form-group">
+                        <label>Configuración</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
                                 <input type="checkbox" id="foroPublico" checked>
                                 <span>Foro Público</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <label class="checkbox-item">
                                 <input type="checkbox" id="permitirComentarios" checked>
                                 <span>Permitir Comentarios</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <label class="checkbox-item">
                                 <input type="checkbox" id="moderacionPrevia">
                                 <span>Requiere Moderación Previa</span>
                             </label>
                         </div>
                     </div>
 
-                    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-                        <button type="button" class="comment-btn cancel"
-                            onclick="cerrarModalNuevoForo()">Cancelar</button>
-                        <button type="button" class="comment-btn submit" onclick="crearNuevoForo()">
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelarNuevoForoBtn">Cancelar</button>
+                        <button type="button" class="btn-primary" id="crearNuevoForoBtn">
                             <i class="fas fa-plus-circle"></i> Crear Foro
                         </button>
                     </div>
@@ -410,1093 +277,161 @@
         /*]]>*/
     </script>
 
+    <!-- Depuración general para clicks en la página -->
     <script>
-        // Variables globales para modales
-        const foroDetailModal = document.getElementById('foroDetailModal');
-        const confirmActionModal = document.getElementById('confirmActionModal');
-        const nuevoForoModal = document.getElementById('nuevoForoModal');
+        console.log("Documento HTML cargado. Preparando para inicializar ForoAdmin.js");
         
-        // Funciones para modales
-        function mostrarModalNuevoForo() {
-            // Limpiar el formulario
-            document.getElementById('nuevoForoForm').reset();
+        // Capturar todos los clics en la página para depuración
+        document.addEventListener('click', function(e) {
+            console.log('Elemento clickeado:', e.target);
+            console.log('ID del elemento:', e.target.id);
+            console.log('Clase del elemento:', e.target.className);
+            console.log('Tag del elemento:', e.target.tagName);
             
-            // Mostrar el modal
-            nuevoForoModal.classList.add('active');
-            document.body.style.overflow = 'hidden'; // Evitar scroll
-        }
-        
-        function cerrarModalNuevoForo() {
-            nuevoForoModal.classList.remove('active');
-            document.body.style.overflow = ''; // Restaurar scroll
-        }
-        
-        function openForoDetail(foroId) {
-            console.log("Abriendo detalle del foro ID:", foroId);
-            // Mostrar loader y preparar contenido
-            document.getElementById('modalLoader').classList.add('active');
-            document.getElementById('modalContentContainer').style.display = 'none';
-            document.getElementById('modalForoTitle').textContent = 'Cargando Foro...';
-            
-            // Mostrar el modal
-            foroDetailModal.classList.add('active');
-            document.body.style.overflow = 'hidden'; // Evitar scroll
-            
-            // Aquí iría la lógica para cargar los datos del foro (ejemplo)
-            setTimeout(() => {
-                // Simular carga de datos
-                document.getElementById('modalLoader').classList.remove('active');
-                document.getElementById('modalContentContainer').style.display = 'block';
-                document.getElementById('modalForoTitle').textContent = 'Foro #' + foroId;
-            }, 1000);
-        }
-        
-        function closeForoDetail() {
-            foroDetailModal.classList.remove('active');
-            document.body.style.overflow = ''; // Restaurar scroll
-        }
-        
-        function showConfirmModal(type, title, message, onConfirmCallback) {
-            const modalContent = document.getElementById('confirmModalContent');
-            const iconClass = type === 'danger' ? 'fa-exclamation-triangle' : 'fa-question-circle';
-            
-            modalContent.innerHTML = `
-                <div class="confirm-header">
-                    <i class="fas ${iconClass}"></i>
-                    <h3>${title}</h3>
-                </div>
-                <div class="confirm-message">${message}</div>
-                <div class="confirm-actions">
-                    <button class="confirm-btn cancel" onclick="closeConfirmModal()">Cancelar</button>
-                    <button class="confirm-btn confirm-action" id="confirmActionButton">Confirmar</button>
-                </div>
-            `;
-            
-            // Añadir clase de tipo (danger, warning, etc.)
-            confirmActionModal.className = 'confirm-modal ' + type;
-            
-            // Asignar callback al botón de confirmar
-            document.getElementById('confirmActionButton').onclick = () => {
-                onConfirmCallback();
-                closeConfirmModal();
-            };
-            
-            // Mostrar modal
-            confirmActionModal.classList.add('active');
-            document.body.style.overflow = 'hidden'; // Evitar scroll
-        }
-        
-        function closeConfirmModal() {
-            confirmActionModal.classList.remove('active');
-            
-            // Restaurar scroll solo si otros modales no están activos
-            if (!document.querySelector('.moderation-modal.active, .foro-detail.active')) {
-                document.body.style.overflow = '';
+            // Verificar si hay algún problema con la propagación de eventos
+            if (e.target.closest('button') || e.target.closest('a')) {
+                console.log('Click en un botón o enlace');
             }
-        }
-        
-        // Inicialización de la página
-        document.addEventListener('DOMContentLoaded', function() {
-            // Cerrar modales al hacer clic fuera del contenido
-            window.addEventListener('click', function(event) {
-                if (event.target == foroDetailModal) {
-                    closeForoDetail();
-                }
-                if (event.target == confirmActionModal) {
-                    closeConfirmModal();
-                }
-                if (event.target == nuevoForoModal) {
-                    cerrarModalNuevoForo();
-                }
-                
-                // Para modales de moderación
-                const moderationModals = document.querySelectorAll('.moderation-modal');
-                moderationModals.forEach(modal => {
-                    if (event.target == modal) {
-                        closeModal(modal.id);
-                    }
-                });
-            });
-            
-            // Botones de cerrar modales
-            const closeButtons = document.querySelectorAll('.close-btn, .moderation-modal-close');
         });
-
-        // --- Configuración de los filtros de foros ---
-        function configurarFiltros() {
-            const filterButtons = document.querySelectorAll('.filter-btn');
-            const searchInput = document.getElementById('searchInput');
-
-            // Configurar botones de filtro
-            filterButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    // Quitar clase activa de todos los botones
-                    filterButtons.forEach(btn => btn.classList.remove('active'));
-
-                    // Añadir clase activa al botón clickeado
-                    this.classList.add('active');
-
-                    // Cargar foros según el filtro seleccionado
-                    const filtro = this.getAttribute('data-filter');
-                    cargarForos(filtro);
+        
+        // Asegurar que los modales estén cerrados al inicio
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM completamente cargado. Debería ejecutarse ForoAdmin.js ahora.");
+            
+            // Remover cualquier clase 'visible' de los modales al inicio
+            const modales = document.querySelectorAll('.foro-detail, .confirm-modal');
+            modales.forEach(modal => {
+                modal.classList.remove('visible');
+                console.log('Modal inicializado (no visible):', modal.id);
+            });
+            
+            // Asegurar que los enlaces de navegación funcionen correctamente
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                console.log('Enlace de navegación encontrado:', link.getAttribute('href'));
+                
+                // Añadir manejador adicional para depuración
+                link.addEventListener('click', function(e) {
+                    console.log('Enlace clickeado:', this.getAttribute('href'));
                 });
             });
-
-            // Configurar búsqueda
-            if (searchInput) {
-                searchInput.addEventListener('keyup', function (e) {
-                    // Si presiona Enter, realizar búsqueda
-                    if (e.key === 'Enter') {
-                        const searchTerm = this.value.trim();
-
-                        if (searchTerm.length > 0) {
-                            // Añadir clase de búsqueda activa para mostrar loader
-                            this.parentElement.classList.add('searching');
-
-                            // Cargar con el filtro activo actual
-                            const filtroActivo = document.querySelector('.filter-btn.active').getAttribute('data-filter');
-                            cargarForos(filtroActivo);
-                        }
-                    }
-                });
-            }
-        }
-
-        // --- Función para confirmar eliminación de post ---
-        function confirmDeletePost(foroId, comentarioId) {
-            console.log("Confirmar eliminar post:", comentarioId, "del foro:", foroId);
-
-            showConfirmModal('danger', 'Eliminar Comentario',
-                `¿Estás seguro de que deseas eliminar este comentario? Esta acción no se puede deshacer.`,
-                () => {
-                    // Mostrar indicador de carga
-                    const postElement = document.querySelector(`.post[data-comment-id="${comentarioId}"]`);
-                    if (postElement) {
-                        postElement.classList.add('processing');
-                    }
-
-                    // Llamar a la API para eliminar el comentario
-                    fetch(`/api/admin/foros/${foroId}/comments/${comentarioId}`, {
-                        method: 'DELETE'
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`Error ${response.status}: ${response.statusText}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            showNotification('success', 'Comentario Eliminado',
-                                data.mensaje || 'El comentario ha sido eliminado correctamente');
-
-                            // Eliminar el elemento con animación
-                            if (postElement) {
-                                postElement.style.height = postElement.offsetHeight + 'px';
-                                postElement.classList.add('removing');
-
-                                setTimeout(() => {
-                                    postElement.style.height = '0';
-                                    postElement.style.opacity = '0';
-                                    postElement.style.margin = '0';
-                                    postElement.style.padding = '0';
-
-                                    setTimeout(() => {
-                                        postElement.remove();
-                                    }, 300);
-                                }, 10);
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Error eliminando comentario:", error);
-
-                            if (postElement) {
-                                postElement.classList.remove('processing');
-                            }
-
-                            showNotification('danger', 'Error',
-                                `No se pudo eliminar el comentario: ${error.message}`);
-                        });
-                }
-            );
-        }
-
-        // Función para emitir advertencia a un post
-        function warnPost(foroId, comentarioId) {
-            console.log("Advertir sobre post:", comentarioId, "del foro:", foroId);
-
-            showConfirmModal('warning', 'Advertir Comentario',
-                `¿Estás seguro de que deseas enviar una advertencia al autor de este comentario?`,
-                () => {
-                    // Mostrar indicador de carga
-                    const postElement = document.querySelector(`.post[data-comment-id="${comentarioId}"]`);
-                    if (postElement) {
-                        postElement.classList.add('processing');
-                    }
-
-                    // Solicitar motivo de la advertencia
-                    const motivo = prompt('Motivo de la advertencia:', 'Este comentario incumple nuestras normas de comunidad');
-
-                    if (motivo === null) {
-                        if (postElement) postElement.classList.remove('processing');
-                        return; // Usuario canceló
-                    }
-
-                    // Llamar a la API para advertir
-                    fetch(`/api/admin/foros/${foroId}/comments/${comentarioId}/warn`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(motivo)
-                    })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`Error ${response.status}: ${response.statusText}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (postElement) {
-                                postElement.classList.remove('processing');
-                                postElement.classList.add('action-success');
-                                setTimeout(() => {
-                                    postElement.classList.remove('action-success');
-                                }, 1000);
-                            }
-
-                            showNotification('warning', 'Advertencia Enviada',
-                                data.mensaje || 'Se ha enviado una advertencia al autor del comentario');
-                        })
-                        .catch(error => {
-                            console.error("Error enviando advertencia:", error);
-
-                            if (postElement) {
-                                postElement.classList.remove('processing');
-                            }
-
-                            showNotification('danger', 'Error',
-                                `No se pudo enviar la advertencia: ${error.message}`);
-                        });
-                }
-            );
-        }
-
-        function crearNuevoForo() {
-            const tituloInput = document.getElementById('tituloForo');
-            const descripcionInput = document.getElementById('descripcionForo');
-            const foroPublicoInput = document.getElementById('foroPublico');
-            const permitirComentariosInput = document.getElementById('permitirComentarios');
-            const moderacionPreviaInput = document.getElementById('moderacionPrevia');
-
-            const titulo = tituloInput?.value.trim() || '';
-            const descripcion = descripcionInput?.value.trim() || '';
-            const esPublico = foroPublicoInput?.checked || false;
-            const permiteComentarios = permitirComentariosInput?.checked || false;
-            const requiereModeracion = moderacionPreviaInput?.checked || false;
-
-            if (!titulo) {
-                showNotification('warning', 'Campo requerido', 'Por favor ingrese un título para el foro');
-                tituloInput?.focus();
-                return;
-            }
-
-            if (!descripcion) {
-                showNotification('warning', 'Campo requerido', 'Por favor ingrese una descripción para el foro');
-                descripcionInput?.focus();
-                return;
-            }
-
-            const foroData = {
-                titulo: titulo,
-                descripcion: descripcion,
-                publico: esPublico,
-                permitirComentarios: permiteComentarios,
-                moderacionPrevia: requiereModeracion
-            };
-
-            const crearButton = document.querySelector('#nuevoForoForm button[onclick="crearNuevoForo()"]');
-            const originalButtonHtml = crearButton.innerHTML;
-            crearButton.disabled = true;
-            crearButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
-
-            // Simulación de llamada a la API
-            console.log("Enviando datos del foro:", foroData);
-            setTimeout(() => {
-                // Simular éxito o error aleatoriamente para prueba
-                const exito = Math.random() > 0.2; // 80% de éxito en la simulación
-
-                if (exito) {
-                    showNotification('success', 'Foro Creado', `El foro "${titulo}" ha sido creado exitosamente.`);
-                    cerrarModalNuevoForo();
-                } else {
-                    showNotification('danger', 'Error al Crear', 'No se pudo crear el foro. Inténtelo más tarde.');
-                }
-                crearButton.disabled = false;
-                crearButton.innerHTML = originalButtonHtml;
-            }, 1500); // Simular retraso de red
-        }
-
-        // Funciones de moderación
-        function showBanUserModal() {
-            const modal = document.getElementById('banUserModal');
-            if (modal) {
-                loadUsers();
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        function showWordFilterModal() {
-            const modal = document.getElementById('wordFilterModal');
-            if (modal) {
-                loadFilteredWords();
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        function showAnnouncementModal() {
-            const modal = document.getElementById('announcementModal');
-            if (modal) {
-                // Establecer fecha predeterminada 7 días en el futuro
-                const defaultDate = new Date();
-                defaultDate.setDate(defaultDate.getDate() + 7);
-                
-                const expirationInput = document.getElementById('announcementExpiration');
-                if (expirationInput) {
-                    expirationInput.valueAsDate = defaultDate;
-                }
-                
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        function showModerationQueueModal() {
-            const modal = document.getElementById('moderationQueueModal');
-            if (modal) {
-                loadReportedItems();
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        function showCategoryModal() {
-            const modal = document.getElementById('categoryModal');
-            if (modal) {
-                loadCategories();
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        // Funciones de carga de datos
-        function loadUsers() {
-            // Aquí iría la lógica para cargar usuarios desde la API
-            console.log("Cargando usuarios...");
-        }
-
-        function loadFilteredWords() {
-            // Aquí iría la lógica para cargar palabras filtradas
-            console.log("Cargando palabras filtradas...");
-        }
-
-        function loadReportedItems() {
-            // Aquí iría la lógica para cargar elementos reportados
-            console.log("Cargando elementos reportados...");
-        }
-
-        function loadCategories() {
-            // Aquí iría la lógica para cargar categorías
-            console.log("Cargando categorías...");
-        }
-        
-        function loadStats() {
-            // Función para cargar estadísticas
-            console.log("Cargando estadísticas...");
-        }
-    </script>
-    <script>
-        document.getElementById('menuToggle').addEventListener('click', function () {
-            document.querySelector('.navbar').classList.toggle('active');
         });
     </script>
 
-    <!-- Otros scripts existentes -->
-    <!-- <script src="../js/Foro.js"></script> -->
+    <!-- Nuevo script específico para ForoAdmin -->
+    <script th:src="@{/js/ForoAdmin.js}" defer></script>
+    
+    <!-- Script para herramientas de moderación avanzada -->
+    <script th:src="@{/js/ModeracionAvanzada.js}" defer></script>
 
-    <!-- Ventanas modales para moderación -->
-    <div id="banUserModal" class="moderation-modal">
-        <div class="moderation-modal-content">
-            <div class="moderation-modal-header">
-                <h3><i class="fas fa-ban"></i> Bannear Usuario</h3>
-                <button class="moderation-modal-close" onclick="closeModal('banUserModal')">&times;</button>
+    <!-- Modal para Gestión de Usuarios Baneados -->
+    <div id="banUserModal" class="foro-detail">
+        <div class="foro-detail-content" style="max-width: 800px;">
+            <div class="foro-header">
+                <h2>Gestión de Usuarios Baneados</h2>
+                <button type="button" class="close-btn" id="cerrarBanUserModalBtn">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="moderation-modal-body">
-                <div class="form-group">
-                    <label for="banUserId">Usuario:</label>
-                    <select id="banUserId" class="form-control">
-                        <!-- Se llenará dinámicamente -->
-                    </select>
+            <div class="foro-body">
+                <div class="filter-tools" style="padding: 15px;">
+                    <div class="search-box">
+                        <input type="text" id="searchUserInput" placeholder="Buscar usuario...">
+                        <button id="searchUserButton">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="filter-buttons">
+                        <button type="button" class="filter-btn active" data-filter="todos">
+                            <i class="fas fa-list"></i> Todos
+                        </button>
+                        <button type="button" class="filter-btn" data-filter="baneados">
+                            <i class="fas fa-ban"></i> Baneados
+                        </button>
+                        <button type="button" class="filter-btn" data-filter="activos">
+                            <i class="fas fa-check-circle"></i> Activos
+                        </button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="banReason">Razón:</label>
-                    <textarea id="banReason" class="form-control" rows="3" placeholder="Describa la razón del ban..."></textarea>
+
+                <div class="ban-users-container" style="padding: 15px;">
+                    <table class="ban-users-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th>Estado</th>
+                                <th>Fecha de Baneo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Los usuarios se cargarán dinámicamente aquí -->
+                        </tbody>
+                    </table>
+
+                    <div id="usersPagination" class="pagination">
+                        <!-- Paginación -->
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="banDuration">Duración:</label>
-                    <select id="banDuration" class="form-control">
-                        <option value="24">24 horas</option>
-                        <option value="72">3 días</option>
-                        <option value="168">1 semana</option>
-                        <option value="720">30 días</option>
-                        <option value="0">Permanente</option>
-                    </select>
-                </div>
-            </div>
-            <div class="moderation-modal-footer">
-                <button class="moderation-btn moderation-btn-secondary" onclick="closeModal('banUserModal')">Cancelar</button>
-                <button class="moderation-btn moderation-btn-primary" onclick="banUser()">Bannear</button>
             </div>
         </div>
     </div>
 
-    <div id="wordFilterModal" class="moderation-modal">
-        <div class="moderation-modal-content">
-            <div class="moderation-modal-header">
-                <h3><i class="fas fa-filter"></i> Filtros de Palabras</h3>
-                <button class="moderation-modal-close" onclick="closeModal('wordFilterModal')">&times;</button>
+    <!-- Modal para Configuración de Filtros de Palabras -->
+    <div id="wordFilterModal" class="foro-detail">
+        <div class="foro-detail-content" style="max-width: 600px;">
+            <div class="foro-header">
+                <h2>Configuración de Filtros de Palabras</h2>
+                <button type="button" class="close-btn" id="cerrarWordFilterBtn">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="moderation-modal-body">
-                <div class="filtered-words-list">
-                    <h4>Palabras Filtradas</h4>
-                    <ul id="filteredWordsList">
-                        <!-- Se llenará dinámicamente -->
-                    </ul>
-                </div>
-                <div class="form-group">
-                    <label for="newFilteredWord">Añadir nueva palabra:</label>
-                    <div class="d-flex">
-                        <input type="text" id="newFilteredWord" class="form-control" placeholder="Palabra a filtrar">
-                        <button class="btn btn-primary ml-2" onclick="addFilteredWord()">Añadir</button>
-                    </div>
-                </div>
-            </div>
-            <div class="moderation-modal-footer">
-                <button class="moderation-btn moderation-btn-secondary" onclick="closeModal('wordFilterModal')">Cerrar</button>
-                <button class="moderation-btn moderation-btn-primary" onclick="saveFilteredWords()">Guardar Cambios</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="announcementModal" class="moderation-modal">
-        <div class="moderation-modal-content">
-            <div class="moderation-modal-header">
-                <h3><i class="fas fa-bullhorn"></i> Crear Anuncio</h3>
-                <button class="moderation-modal-close" onclick="closeModal('announcementModal')">&times;</button>
-            </div>
-            <div class="moderation-modal-body">
-                <div class="form-group">
-                    <label for="announcementTitle">Título:</label>
-                    <input type="text" id="announcementTitle" class="form-control" placeholder="Título del anuncio">
-                </div>
-                <div class="form-group">
-                    <label for="announcementContent">Contenido:</label>
-                    <textarea id="announcementContent" class="form-control" rows="4" placeholder="Contenido del anuncio..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="announcementExpiration">Expiración:</label>
-                    <input type="date" id="announcementExpiration" class="form-control">
-                </div>
-                <div class="form-check">
-                    <input type="checkbox" id="announcementImportant" class="form-check-input">
-                    <label for="announcementImportant" class="form-check-label">Marcar como importante</label>
-                </div>
-            </div>
-            <div class="moderation-modal-footer">
-                <button class="moderation-btn moderation-btn-secondary" onclick="closeModal('announcementModal')">Cancelar</button>
-                <button class="moderation-btn moderation-btn-primary" onclick="createAnnouncement()">Publicar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="moderationQueueModal" class="moderation-modal">
-        <div class="moderation-modal-content">
-            <div class="moderation-modal-header">
-                <h3><i class="fas fa-tasks"></i> Cola de Moderación</h3>
-                <button class="moderation-modal-close" onclick="closeModal('moderationQueueModal')">&times;</button>
-            </div>
-            <div class="moderation-modal-body">
-                <div class="reported-items-container">
-                    <div class="filter-controls mb-3">
-                        <select id="reportTypeFilter" class="form-control">
-                            <option value="all">Todos los reportes</option>
-                            <option value="spam">Spam</option>
-                            <option value="offensive">Contenido ofensivo</option>
-                            <option value="harassment">Acoso</option>
-                            <option value="other">Otros</option>
-                        </select>
-                    </div>
-                    <div id="reportedItemsList">
-                        <!-- Se llenará dinámicamente -->
-                    </div>
-                </div>
-            </div>
-            <div class="moderation-modal-footer">
-                <button class="moderation-btn moderation-btn-secondary" onclick="closeModal('moderationQueueModal')">Cerrar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para reportar contenido -->
-    <div id="reportContentModal" class="moderation-modal">
-        <div class="moderation-modal-content">
-            <div class="moderation-modal-header">
-                <h3><i class="fas fa-flag"></i> Reportar Contenido</h3>
-                <button class="moderation-modal-close" onclick="closeModal('reportContentModal')">&times;</button>
-            </div>
-            <div class="moderation-modal-body">
-                <input type="hidden" id="reportItemId">
-                <input type="hidden" id="reportItemType">
-                
-                <div class="form-group">
-                    <label for="reportReason">Razón del reporte:</label>
-                    <select id="reportReason" class="form-control">
-                        <option value="">Seleccione una razón</option>
-                        <option value="spam">Spam / Contenido comercial no deseado</option>
-                        <option value="offensive">Contenido ofensivo / Lenguaje inapropiado</option>
-                        <option value="harassment">Acoso a otros usuarios</option>
-                        <option value="other">Otro motivo</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="reportDescription">Descripción (opcional):</label>
-                    <textarea id="reportDescription" class="form-control" placeholder="Proporcione más detalles sobre el reporte..." rows="4"></textarea>
-                </div>
-                
-                <div class="report-guidelines">
-                    <h4><i class="fas fa-info-circle"></i> Pautas para reportar</h4>
-                    <ul>
-                        <li>Sea específico y claro sobre el motivo del reporte.</li>
-                        <li>Los reportes son anónimos para otros usuarios, pero los administradores pueden ver quién los envía.</li>
-                        <li>El uso indebido del sistema de reportes puede resultar en sanciones.</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="moderation-modal-footer">
-                <button class="moderation-btn moderation-btn-secondary" onclick="closeModal('reportContentModal')">Cancelar</button>
-                <button class="moderation-btn moderation-btn-primary" onclick="submitReport()">Enviar Reporte</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para gestión de categorías -->
-    <div id="categoryManagementModal" class="moderation-modal">
-        <div class="moderation-modal-content">
-            <div class="moderation-modal-header">
-                <h3><i class="fas fa-tags"></i> Gestión de Categorías</h3>
-                <button class="moderation-modal-close" onclick="closeModal('categoryManagementModal')">&times;</button>
-            </div>
-            <div class="moderation-modal-body">
-                <div class="category-management-tabs">
-                    <button class="tab-btn active" onclick="switchCategoryTab('categoryList')">Lista de Categorías</button>
-                    <button class="tab-btn" onclick="switchCategoryTab('newCategory')">Nueva Categoría</button>
-                </div>
-                
-                <div id="categoryList" class="category-tab-content active">
-                    <div class="category-search">
-                        <input type="text" id="categorySearch" placeholder="Buscar categoría..." class="form-control">
-                    </div>
-                    
-                    <div class="categories-container">
-                        <table class="categories-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Color</th>
-                                    <th>Foros</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="categoriesList">
-                                <!-- Se llenará dinámicamente -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <div id="newCategory" class="category-tab-content">
-                    <div class="form-group">
-                        <label for="categoryName">Nombre de la categoría:</label>
-                        <input type="text" id="categoryName" class="form-control" placeholder="Ej: Tecnología, Ayuda, General...">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="categoryDescription">Descripción:</label>
-                        <textarea id="categoryDescription" class="form-control" placeholder="Breve descripción de la categoría..." rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="categoryColor">Color:</label>
-                        <div class="color-picker">
-                            <input type="color" id="categoryColor" value="#4f46e5">
-                            <span id="colorHex">#4f46e5</span>
+            <div class="foro-body">
+                <div style="padding: 15px;">
+                    <div class="word-filter-form">
+                        <div class="form-group">
+                            <label for="newFilterWord">Nueva Palabra o Frase a Filtrar</label>
+                            <input type="text" id="newFilterWord" placeholder="Ingresa una palabra o frase...">
                         </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="categoryIcon">Icono:</label>
-                        <div class="icon-selector">
-                            <div class="selected-icon">
-                                <i id="selectedIcon" class="fas fa-folder"></i>
-                                <span>fa-folder</span>
-                            </div>
-                            <button type="button" class="btn-select-icon" onclick="toggleIconPicker()">
-                                Cambiar icono
+                        
+                        <div class="form-group">
+                            <label for="filterLevel">Nivel de Filtro</label>
+                            <select id="filterLevel">
+                                <option value="full">Bloqueo Total</option>
+                                <option value="partial">Censura Parcial</option>
+                                <option value="warning">Solo Advertencia</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-primary" id="addFilterWordBtn">
+                                <i class="fas fa-plus-circle"></i> Agregar Filtro
                             </button>
                         </div>
-                        <div id="iconPicker" class="icon-picker-grid" style="display: none;">
-                            <!-- Iconos populares -->
-                            <div class="icon-option" onclick="selectIcon('fa-folder')"><i class="fas fa-folder"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-comment')"><i class="fas fa-comment"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-question')"><i class="fas fa-question"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-lightbulb')"><i class="fas fa-lightbulb"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-code')"><i class="fas fa-code"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-book')"><i class="fas fa-book"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-users')"><i class="fas fa-users"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-hands-helping')"><i class="fas fa-hands-helping"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-globe')"><i class="fas fa-globe"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-bullhorn')"><i class="fas fa-bullhorn"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-heart')"><i class="fas fa-heart"></i></div>
-                            <div class="icon-option" onclick="selectIcon('fa-star')"><i class="fas fa-star"></i></div>
-                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input type="checkbox" id="categoryRestricted" class="form-check-input">
-                            <label for="categoryRestricted" class="form-check-label">Restringir acceso (solo moderadores)</label>
-                        </div>
-                    </div>
-                    
-                    <div class="category-preview">
-                        <h4>Vista previa:</h4>
-                        <div class="category-badge" id="categoryPreview">
-                            <i class="fas fa-folder"></i>
-                            <span>Nombre de la categoría</span>
+                    <div class="filter-words-list">
+                        <h3>Palabras y Frases Filtradas</h3>
+                        <div class="table-container">
+                            <table class="filter-words-table">
+                                <thead>
+                                    <tr>
+                                        <th>Palabra/Frase</th>
+                                        <th>Nivel</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filterWordsTableBody">
+                                    <!-- Las palabras filtradas se cargarán dinámicamente aquí -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="moderation-modal-footer">
-                <button class="moderation-btn moderation-btn-secondary" onclick="closeModal('categoryManagementModal')">Cancelar</button>
-                <button id="saveCategoryBtn" class="moderation-btn moderation-btn-primary" onclick="saveCategory()">Guardar Categoría</button>
             </div>
         </div>
     </div>
-
-    <!-- Script para la inicialización de la interfaz y gestión de modales -->
-    <script>
-        // Variables globales
-        const allModals = document.querySelectorAll('.moderation-modal, .foro-detail, .confirm-modal');
-        
-        // Inicialización de la página
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configurar interacción con modales
-            initializeModals();
-            
-            // Configurar botones de la interfaz
-            setupUIButtons();
-            
-            // Cargar datos iniciales si es necesario
-            if (document.getElementById('totalForos')) {
-                try {
-                    loadStats();
-                } catch (e) {
-                    console.error("Error al cargar estadísticas:", e);
-                }
-            }
-            
-            // Configurar menú responsive
-            document.getElementById('menuToggle').addEventListener('click', function() {
-                document.querySelector('.navbar').classList.toggle('active');
-            });
-        });
-        
-        // Inicializar todos los modales
-        function initializeModals() {
-            // Cerrar modales al hacer clic fuera del contenido
-            allModals.forEach(modal => {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        closeModalById(this.id);
-                    }
-                });
-            });
-            
-            // Manejar botones de cerrar
-            const closeButtons = document.querySelectorAll('.close-btn, .moderation-modal-close');
-            closeButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const modal = this.closest('.moderation-modal, .foro-detail, .confirm-modal');
-                    if (modal) {
-                        closeModalById(modal.id);
-                    }
-                });
-            });
-        }
-        
-        // Configurar botones de la interfaz
-        function setupUIButtons() {
-            // Botones de herramientas de moderación
-            const moderationButtons = {
-                'banUser': document.querySelector('.mod-tool-btn[onclick="showBanUserModal()"]'),
-                'wordFilter': document.querySelector('.mod-tool-btn[onclick="showWordFilterModal()"]'),
-                'announcement': document.querySelector('.mod-tool-btn[onclick="showAnnouncementModal()"]'),
-                'moderationQueue': document.querySelector('.mod-tool-btn[onclick="showModerationQueueModal()"]'),
-                'categories': document.querySelector('.mod-tool-btn[onclick="showCategoryModal()"]')
-            };
-            
-            // Definir las funciones en caso de que no existan
-            if (typeof showBanUserModal !== 'function') {
-                window.showBanUserModal = function() {
-                    const modal = document.getElementById('banUserModal');
-                    if (modal) {
-                        if (typeof loadUsers === 'function') loadUsers();
-                        modal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                };
-            }
-            
-            if (typeof showWordFilterModal !== 'function') {
-                window.showWordFilterModal = function() {
-                    const modal = document.getElementById('wordFilterModal');
-                    if (modal) {
-                        if (typeof loadFilteredWords === 'function') loadFilteredWords();
-                        modal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                };
-            }
-            
-            if (typeof showAnnouncementModal !== 'function') {
-                window.showAnnouncementModal = function() {
-                    const modal = document.getElementById('announcementModal');
-                    if (modal) {
-                        const expirationInput = document.getElementById('announcementExpiration');
-                        if (expirationInput) {
-                            const defaultDate = new Date();
-                            defaultDate.setDate(defaultDate.getDate() + 7);
-                            expirationInput.valueAsDate = defaultDate;
-                        }
-                        modal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                };
-            }
-            
-            if (typeof showModerationQueueModal !== 'function') {
-                window.showModerationQueueModal = function() {
-                    const modal = document.getElementById('moderationQueueModal');
-                    if (modal) {
-                        if (typeof loadReportedItems === 'function') loadReportedItems();
-                        modal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                };
-            }
-            
-            if (typeof showCategoryModal !== 'function') {
-                window.showCategoryModal = function() {
-                    const modal = document.getElementById('categoryModal');
-                    if (modal) {
-                        if (typeof loadCategories === 'function') loadCategories();
-                        modal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                };
-            }
-            
-            // Asegurar que los botones usen las nuevas funciones
-            for (const [key, button] of Object.entries(moderationButtons)) {
-                if (button) {
-                    button.removeAttribute('onclick');
-                    
-                    switch(key) {
-                        case 'banUser':
-                            button.addEventListener('click', showBanUserModal);
-                            break;
-                        case 'wordFilter':
-                            button.addEventListener('click', showWordFilterModal);
-                            break;
-                        case 'announcement':
-                            button.addEventListener('click', showAnnouncementModal);
-                            break;
-                        case 'moderationQueue':
-                            button.addEventListener('click', showModerationQueueModal);
-                            break;
-                        case 'categories':
-                            button.addEventListener('click', showCategoryModal);
-                            break;
-                    }
-                }
-            }
-            
-            // Botón para nuevo foro
-            const nuevoForoButton = document.querySelector('.btn-nuevo-foro');
-            if (nuevoForoButton) {
-                nuevoForoButton.removeAttribute('onclick');
-                nuevoForoButton.addEventListener('click', mostrarModalNuevoForo);
-            }
-        }
-        
-        // Función para cerrar cualquier modal por su ID
-        function closeModalById(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('active', 'show');
-                
-                // Restaurar scroll solo si no hay otros modales activos
-                if (!document.querySelector('.moderation-modal.active, .foro-detail.active, .confirm-modal.active')) {
-                    document.body.style.overflow = '';
-                }
-            }
-        }
-        
-        // Mostrar una notificación en pantalla
-        function showNotification(type, title, message) {
-            const container = document.getElementById('notificationContainer');
-            if (!container) return;
-            
-            const iconClass = {
-                'success': 'fa-check-circle',
-                'warning': 'fa-exclamation-triangle',
-                'danger': 'fa-times-circle',
-                'info': 'fa-info-circle'
-            }[type] || 'fa-info-circle';
-            
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.innerHTML = `
-                <div class="notification-icon"><i class="fas ${iconClass}"></i></div>
-                <div class="notification-content">
-                    <div class="notification-title">${title}</div>
-                    <div class="notification-message">${message}</div>
-                </div>
-                <button class="notification-close">&times;</button>
-            `;
-            
-            // Configurar botón de cerrar
-            const closeBtn = notification.querySelector('.notification-close');
-            closeBtn.addEventListener('click', () => {
-                notification.classList.remove('show');
-                setTimeout(() => notification.remove(), 300);
-            });
-            
-            // Añadir al contenedor
-            container.appendChild(notification);
-            
-            // Forzar repintado para animar
-            void notification.offsetWidth;
-            notification.classList.add('show');
-            
-            // Auto-cerrar después de 5 segundos
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => notification.remove(), 300);
-            }, 5000);
-        }
-        
-        // Funciones adicionales para los modales de herramientas
-        function mostrarModalNuevoForo() {
-            const modal = document.getElementById('nuevoForoModal');
-            if (modal) {
-                // Limpiar formulario si existe
-                const form = modal.querySelector('form');
-                if (form) form.reset();
-                
-                // Mostrar modal
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            } else {
-                console.error("Modal 'nuevoForoModal' no encontrado");
-            }
-        }
-        
-        function cerrarModalNuevoForo() {
-            closeModalById('nuevoForoModal');
-        }
-        
-        function crearNuevoForo() {
-            const tituloInput = document.getElementById('tituloForo');
-            const descripcionInput = document.getElementById('descripcionForo');
-            const foroPublicoInput = document.getElementById('foroPublico');
-            const permitirComentariosInput = document.getElementById('permitirComentarios');
-            const moderacionPreviaInput = document.getElementById('moderacionPrevia');
-
-            const titulo = tituloInput?.value.trim() || '';
-            const descripcion = descripcionInput?.value.trim() || '';
-            const esPublico = foroPublicoInput?.checked || false;
-            const permiteComentarios = permitirComentariosInput?.checked || false;
-            const requiereModeracion = moderacionPreviaInput?.checked || false;
-
-            if (!titulo) {
-                showNotification('warning', 'Campo requerido', 'Por favor ingrese un título para el foro');
-                tituloInput?.focus();
-                return;
-            }
-
-            if (!descripcion) {
-                showNotification('warning', 'Campo requerido', 'Por favor ingrese una descripción para el foro');
-                descripcionInput?.focus();
-                return;
-            }
-
-            const foroData = {
-                titulo: titulo,
-                descripcion: descripcion,
-                publico: esPublico,
-                permitirComentarios: permiteComentarios,
-                moderacionPrevia: requiereModeracion
-            };
-
-            const crearButton = document.querySelector('#nuevoForoForm button[onclick="crearNuevoForo()"]');
-            const originalButtonHtml = crearButton.innerHTML;
-            crearButton.disabled = true;
-            crearButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
-
-            // Simulación de llamada a la API
-            console.log("Enviando datos del foro:", foroData);
-            setTimeout(() => {
-                // Simular éxito o error aleatoriamente para prueba
-                const exito = Math.random() > 0.2; // 80% de éxito en la simulación
-
-                if (exito) {
-                    showNotification('success', 'Foro Creado', `El foro "${titulo}" ha sido creado exitosamente.`);
-                    cerrarModalNuevoForo();
-                } else {
-                    showNotification('danger', 'Error al Crear', 'No se pudo crear el foro. Inténtelo más tarde.');
-                }
-                crearButton.disabled = false;
-                crearButton.innerHTML = originalButtonHtml;
-            }, 1500); // Simular retraso de red
-        }
-        
-        // Función para obtener lista de usuarios para el modal de bannear
-        if (typeof loadUsers !== 'function') {
-            window.loadUsers = function() {
-                console.log('Cargando lista de usuarios...');
-                // Aquí iría el código para cargar la lista de usuarios desde el servidor
-                const userSelect = document.getElementById('banUserId');
-                if (userSelect) {
-                    // Limpiar opciones anteriores
-                    userSelect.innerHTML = '';
-                    
-                    // Por ahora, simplemente agregamos algunos usuarios de prueba
-                    const testUsers = [
-                        { id: 1, nombre: 'Usuario Prueba 1' },
-                        { id: 2, nombre: 'Usuario Prueba 2' },
-                        { id: 3, nombre: 'Usuario Prueba 3' }
-                    ];
-                    
-                    // Agregar opciones al select
-                    testUsers.forEach(user => {
-                        const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = user.nombre;
-                        userSelect.appendChild(option);
-                    });
-                }
-            };
-        }
-        
-        // Función para cargar palabras filtradas
-        if (typeof loadFilteredWords !== 'function') {
-            window.loadFilteredWords = function() {
-                console.log('Cargando palabras filtradas...');
-                // Aquí iría el código para cargar las palabras filtradas desde el servidor
-                const wordsList = document.getElementById('filteredWordsList');
-                if (wordsList) {
-                    // Limpiar lista anterior
-                    wordsList.innerHTML = '';
-                    
-                    // Por ahora, simplemente agregamos algunas palabras de prueba
-                    const testWords = ['palabra1', 'palabra2', 'palabra3'];
-                    
-                    // Agregar elementos a la lista
-                    testWords.forEach(word => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `${word} <button class="remove-word-btn" onclick="removeFilteredWord('${word}')">×</button>`;
-                        wordsList.appendChild(li);
-                    });
-                }
-            };
-        }
-        
-        // Función para cargar elementos reportados
-        if (typeof loadReportedItems !== 'function') {
-            window.loadReportedItems = function() {
-                console.log('Cargando elementos reportados...');
-                // Aquí iría el código para cargar los elementos reportados desde el servidor
-                const reportsList = document.getElementById('reportedItemsList');
-                if (reportsList) {
-                    // Limpiar lista anterior
-                    reportsList.innerHTML = '';
-                    
-                    // Por ahora, mostramos un mensaje de que no hay reportes
-                    reportsList.innerHTML = '<div class="no-reports-message">No hay elementos reportados pendientes.</div>';
-                }
-            };
-        }
-        
-        // Función para cargar categorías
-        if (typeof loadCategories !== 'function') {
-            window.loadCategories = function() {
-                console.log('Cargando categorías...');
-                // Aquí iría el código para cargar las categorías desde el servidor
-                // Esta es una implementación temporal
-            };
-        }
-        
-        // Función para remover palabra filtrada
-        if (typeof removeFilteredWord !== 'function') {
-            window.removeFilteredWord = function(word) {
-                console.log(`Removiendo palabra: ${word}`);
-                // Aquí iría el código para remover la palabra de la lista
-                const item = document.querySelector(`#filteredWordsList li:contains('${word}')`);
-                if (item) {
-                    item.remove();
-                }
-            };
-        }
-        
-        // Función para banear usuario
-        if (typeof banUser !== 'function') {
-            window.banUser = function() {
-                const userId = document.getElementById('banUserId')?.value;
-                const reason = document.getElementById('banReason')?.value;
-                const duration = document.getElementById('banDuration')?.value;
-                
-                if (!userId) {
-                    showNotification('warning', 'Selección requerida', 'Por favor seleccione un usuario');
-                    return;
-                }
-                
-                if (!reason) {
-                    showNotification('warning', 'Campo requerido', 'Por favor ingrese una razón para el ban');
-                    return;
-                }
-                
-                console.log(`Baneando usuario ${userId} por ${duration} horas. Razón: ${reason}`);
-                // Aquí iría el código para banear al usuario en el servidor
-                
-                showNotification('success', 'Usuario baneado', 'El usuario ha sido baneado correctamente');
-                closeModalById('banUserModal');
-            };
-        }
-    </script>
 </body>
 
 </html>

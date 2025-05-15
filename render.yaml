@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: alcambio-app
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free # o el plan que prefieras, ej: standard
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: SPRING_DATA_MONGODB_URI
+        fromDatabase:
+          name: alcambio-mongodb
+          property: connectionString
+      - key: SPRING_REDIS_HOST
+        fromService:
+          type: redis
+          name: alcambio-redis
+          property: host
+      - key: SPRING_REDIS_PORT
+        fromService:
+          type: redis
+          name: alcambio-redis
+          property: port
+      - key: SPRING_REDIS_PASSWORD # Render Redis usualmente tiene contraseña
+        fromService:
+          type: redis
+          name: alcambio-redis
+          property: password
+      # - key: SPRING_REDIS_SSL # Descomentar si el Redis de Render usa SSL
+      #   value: true
+      # Asegúrate de añadir cualquier otra variable de entorno que tu aplicación necesite.
+      # Por ejemplo, si usas JWT secrets, variables para APIs externas, etc.
+      # - key: NOMBRE_DE_TU_VARIABLE
+      #   value: "valor"
+
+  - type: pserv # Private Service para MongoDB
+    name: alcambio-mongodb
+    image:
+      name: mongo:latest # o una versión específica ej: mongo:5.0
+    plan: free # o el plan que prefieras
+    # Render maneja automáticamente el disco persistente para las bases de datos.
+    # Puedes añadir configuraciones adicionales aquí si es necesario.
+
+  - type: redis
+    name: alcambio-redis
+    plan: free # o el plan que prefieras
+    # Render puede requerir un maxmemoryPolicy para planes gratuitos o ciertos planes.
+    # maxmemoryPolicy: allkeys-lru # Ejemplo 

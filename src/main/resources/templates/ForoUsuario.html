@@ -4,77 +4,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Foros - Voluntario</title>
-    <link rel="stylesheet" th:href="@{/Foro.css}">
+    <title>Foros - Boomerang Voluntariado</title>
+    <link rel="stylesheet" th:href="@{/ForoUsuario.css}">
     <link rel="stylesheet" th:href="@{/Styles.css}">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
     <nav class="navbar">
         <div class="logo">
-            <img src="/images/logo.png" alt="Boomerang Voluntariado" class="logo-img">
+            <img th:src="@{/images/logo.png}" alt="Boomerang Voluntariado" class="logo-img">
         </div>
         <ul class="nav-links">
             <li><a th:href="@{/dashboard}"><i class="fas fa-tachometer-alt"></i>Dashboard</a></li>
-
-            <!-- Enlaces para administradores -->
-            <li th:if="${esAdmin}"><a th:href="@{/admin/proyectos}"><i class="fas fa-project-diagram"></i>Proyectos</a>
-            </li>
-
-            <!-- Enlaces para voluntarios -->
-            <li th:unless="${esAdmin}"><a th:href="@{/usuario/proyectos}"><i class="fas fa-project-diagram"></i>Mis
-                    Proyectos</a></li>
-
-            <li><a th:href="@{/foros}" class="active"><i class="fas fa-comments"></i>Foros</a></li>
-
-            <!-- Perfil solo para voluntarios -->
-            <li th:unless="${esAdmin}"><a th:href="@{/usuario/perfil}"><i class="fas fa-user-circle"></i> Perfil</a>
-            </li>
-
+            <li><a th:href="@{/usuario/proyectos}" ><i class="fas fa-project-diagram"></i>Mis Proyectos</a></li>
+            <li><a th:href="@{/foros}"class="active"><i class="fas fa-comments"></i>Foros</a></li>
+            <li><a th:href="@{/usuario/perfil}"><i class="fas fa-user-circle"></i>Perfil</a></li>
             <li><a th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
         </ul>
     </nav>
+    
+    <button class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
 
     <div class="foros-container">
-        <h1><i class="fas fa-comments"></i> Foros de Proyectos</h1>
+        <h1><i class="fas fa-comments"></i> Espacios de Conversación</h1>
 
         <div class="foros-grid" id="forosGrid">
             <!-- Las tarjetas de foros se cargarán dinámicamente con JavaScript -->
             <div th:if="${foros == null || foros.isEmpty()}" class="no-foros-message">
-                <p>No hay foros disponibles en este momento.</p>
+                <p><i class="fas fa-info-circle"></i> No hay foros disponibles en este momento.</p>
+                <p class="secondary-message">Consulta más tarde para ver los nuevos espacios de conversación.</p>
             </div>
         </div>
 
         <!-- Foro Detail Modal - Se mostrará al hacer clic en un foro -->
         <div id="foroDetail" class="foro-detail">
             <div class="foro-content">
+                <!-- Cabecera del foro -->
                 <div class="foro-header">
-                    <!-- La imagen se insertará aquí dinámicamente -->
-                    <h2 id="foroTitle">Cargando foro...</h2>
-                    <button class="close-btn" onclick="closeForo()">
+                    <h2 id="foroTitle">Foro: DDDDDDDDDDDDDD</h2>
+                    <button class="close-btn" onclick="closeForo()" title="Cerrar">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
 
+                <!-- Contenedor de posts/comentarios -->
                 <div class="posts-container" id="postsContainer">
-                    <!-- Aquí se cargarán los comentarios dinámicamente -->
+                    <!-- Comentarios se cargarán dinámicamente -->
                 </div>
 
-                <!-- Formulario para nuevo comentario con imagen de perfil -->
+                <!-- Formulario para nuevo comentario -->
                 <div class="new-post-form">
                     <img th:src="${usuario.imagenPerfil != null ? usuario.imagenPerfil : '/Perfiles/default-user.png'}"
                         alt="Tu avatar" class="user-avatar-input"
                         onerror="this.onerror=null; this.src='/Perfiles/default-user.png'">
-                    <textarea id="newPostInput" class="new-post-input"
-                        placeholder="Escribe un comentario..."></textarea>
-                    <button class="submit-btn" id="submitCommentBtn">
-                        <i class="fas fa-paper-plane"></i> Publicar
-                    </button>
+                    <div class="input-area-container">
+                        <textarea id="newPostInput" class="new-post-input"
+                            placeholder="Comparte tus ideas y experiencias..."></textarea>
+                        <button class="submit-btn" id="submitCommentBtn" title="Publicar">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Contenedor para notificaciones -->
+    <div id="notificationContainer"></div>
 
     <!-- Script para pasar datos de Thymeleaf a JavaScript -->
     <script th:inline="javascript">
@@ -83,12 +83,24 @@
             id: /*[[${usuario.id}]]*/ 'default_id',
             nombre: /*[[${usuario.nombre}]]*/ 'Usuario Anónimo',
             imagenPerfil: /*[[${usuario.imagenPerfil}]]*/ '/Perfiles/default-user.png'
-            // Añade otros campos si Foro.js los necesita
         };
+        
+        // Función para mostrar/ocultar respuestas
+        function toggleReplies(button) {
+            const repliesContainer = button.nextElementSibling;
+            if (repliesContainer.style.display === 'none') {
+                repliesContainer.style.display = 'block';
+                button.textContent = 'Ocultar respuestas';
+            } else {
+                repliesContainer.style.display = 'none';
+                button.textContent = button.getAttribute('data-count') || 'Ver respuestas';
+            }
+        }
         /*]]>*/
     </script>
 
-    <script th:src="@{/js/Foro.js}" defer></script>
+    <!-- Script principal del foro -->
+    <script th:src="@{/js/ForoUsuario.js}" defer></script>
 </body>
 
 </html>

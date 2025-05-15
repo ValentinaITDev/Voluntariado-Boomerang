@@ -8,16 +8,16 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.Impulso.Alcambio.Modelo.Proyecto;
 import com.Impulso.Alcambio.Modelo.Usuario;
@@ -38,6 +40,7 @@ import com.Impulso.Alcambio.Servicio.ProyectoServicio;
 import com.Impulso.Alcambio.Servicio.UsuarioServicio;
 import com.Impulso.Alcambio.Modelo.Desafio;
 import com.Impulso.Alcambio.Servicio.ForoServicio;
+import com.Impulso.Alcambio.Servicio.CacheServicio;
 
 /**
  * Este es el controlador para gestionar todo lo relacionado con los proyectos.
@@ -49,6 +52,8 @@ import com.Impulso.Alcambio.Servicio.ForoServicio;
 // @PreAuthorize("hasAuthority('ADMIN')") // Comentado para permitir a usuarios autenticados ver proyectos
 public class ProyectoController {
     
+    private static final Logger logger = LoggerFactory.getLogger(ProyectoController.class);
+    
     @Autowired
     private ProyectoServicio proyectoServicio;
     
@@ -57,6 +62,9 @@ public class ProyectoController {
     
     @Autowired
     private ForoServicio foroServicio;
+    
+    @Autowired
+    private CacheServicio cacheServicio;
     
     // =================== MÉTODOS AUXILIARES ===================
     
@@ -105,9 +113,20 @@ public class ProyectoController {
     public ResponseEntity<List<Proyecto>> obtenerProyectos(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Proyecto> proyectosPage = proyectoServicio.obtenerTodosPaginados(pageable);
-        return ResponseEntity.ok(proyectosPage.getContent());
+        try {
+            Page<Proyecto> proyectosPaginados = proyectoServicio.obtenerTodosPaginados(PageRequest.of(page, size));
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("X-Total-Count", String.valueOf(proyectosPaginados.getTotalElements()));
+            headers.add("X-Total-Pages", String.valueOf(proyectosPaginados.getTotalPages()));
+            headers.add("X-Current-Page", String.valueOf(proyectosPaginados.getNumber()));
+            headers.add("Access-Control-Expose-Headers", "X-Total-Count, X-Total-Pages, X-Current-Page");
+            
+            return new ResponseEntity<>(proyectosPaginados.getContent(), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error al obtener proyectos paginados: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     // Devuelve los detalles completos de un proyecto específico
@@ -115,20 +134,45 @@ public class ProyectoController {
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Proyecto> obtenerProyectoPorId(@PathVariable String id) {
-        return proyectoServicio.obtenerProyectoPorId(id)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+        try {
+            logger.info("Obteniendo proyecto por ID: {}", id);
+            Optional<Proyecto> proyectoOpt = proyectoServicio.obtenerProyectoPorId(id);
+            
+            if (proyectoOpt.isPresent()) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("Content-Type", "application/json; charset=UTF-8");
+                return new ResponseEntity<>(proyectoOpt.get(), headers, HttpStatus.OK);
+            } else {
+                logger.warn("Proyecto con ID {} no encontrado", id);
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            logger.error("Error al obtener proyecto con ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     // Permite buscar proyectos por nombre, útil para el buscador de la aplicación
     @GetMapping("/buscar")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Page<Proyecto>> buscarProyectosPorNombre(
+    public ResponseEntity<List<Proyecto>> buscarProyectosPorNombre(
             @RequestParam String nombre,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(proyectoServicio.buscarPorNombrePaginado(nombre, pageable));
+        try {
+            Page<Proyecto> proyectosFiltrados = proyectoServicio.buscarPorNombrePaginado(nombre, PageRequest.of(page, size));
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("X-Total-Count", String.valueOf(proyectosFiltrados.getTotalElements()));
+            headers.add("X-Total-Pages", String.valueOf(proyectosFiltrados.getTotalPages()));
+            headers.add("X-Current-Page", String.valueOf(proyectosFiltrados.getNumber()));
+            headers.add("Access-Control-Expose-Headers", "X-Total-Count, X-Total-Pages, X-Current-Page");
+            
+            return new ResponseEntity<>(proyectosFiltrados.getContent(), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error al buscar proyectos por nombre: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     
     /**
@@ -470,6 +514,16 @@ public class ProyectoController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> obtenerParticipantesProyectoAdmin(@PathVariable String id) {
         try {
+            logger.info("Obteniendo participantes para proyecto con ID: {}", id);
+            
+            // Verificar que el proyecto existe
+            Optional<Proyecto> proyectoOpt = proyectoServicio.obtenerProyectoPorId(id);
+            if (proyectoOpt.isEmpty()) {
+                logger.warn("Proyecto con ID {} no encontrado", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Proyecto no encontrado"));
+            }
+            
             // Obtener todos los usuarios
             List<Usuario> todosLosUsuarios = usuarioServicio.obtenerTodos();
             
@@ -488,10 +542,23 @@ public class ProyectoController {
                 })
                 .collect(Collectors.toList());
             
-            return ResponseEntity.ok(participantes);
+            logger.info("Encontrados {} participantes para el proyecto {}", participantes.size(), id);
+            
+            // Establecer cabeceras explícitas para asegurar que se interprete como JSON
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(participantes, headers, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error al obtener participantes: " + e.getMessage()));
+            logger.error("Error al obtener participantes para proyecto {}: {}", id, e.getMessage(), e);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener participantes");
+            errorResponse.put("mensaje", e.getMessage());
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(errorResponse, headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -500,11 +567,34 @@ public class ProyectoController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> obtenerDesafiosProyectoAdmin(@PathVariable String id) {
         try {
+            logger.info("Obteniendo desafíos para proyecto con ID: {}", id);
+            
+            // Verificar que el proyecto existe
+            Optional<Proyecto> proyectoOpt = proyectoServicio.obtenerProyectoPorId(id);
+            if (proyectoOpt.isEmpty()) {
+                logger.warn("Proyecto con ID {} no encontrado", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Proyecto no encontrado"));
+            }
+            
             List<Desafio> desafios = proyectoServicio.obtenerDesafiosDeProyecto(id);
-            return ResponseEntity.ok(desafios);
+            logger.info("Encontrados {} desafíos para el proyecto {}", desafios.size(), id);
+            
+            // Establecer cabeceras explícitas para asegurar que se interprete como JSON
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(desafios, headers, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error al obtener desafíos: " + e.getMessage()));
+            logger.error("Error al obtener desafíos para proyecto {}: {}", id, e.getMessage(), e);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener desafíos");
+            errorResponse.put("mensaje", e.getMessage());
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(errorResponse, headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -513,11 +603,193 @@ public class ProyectoController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> obtenerEstadisticasProyectoAdmin(@PathVariable String id) {
         try {
+            logger.info("Obteniendo estadísticas para proyecto con ID: {}", id);
+            
+            // Verificar que el proyecto existe
+            Optional<Proyecto> proyectoOpt = proyectoServicio.obtenerProyectoPorId(id);
+            if (proyectoOpt.isEmpty()) {
+                logger.warn("Proyecto con ID {} no encontrado", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Proyecto no encontrado"));
+            }
+            
             Map<String, Object> estadisticas = proyectoServicio.obtenerEstadisticasProyecto(id);
-            return ResponseEntity.ok(estadisticas);
+            logger.info("Estadísticas obtenidas para el proyecto {}", id);
+            
+            // Establecer cabeceras explícitas para asegurar que se interprete como JSON
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(estadisticas, headers, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error al obtener estadísticas: " + e.getMessage()));
+            logger.error("Error al obtener estadísticas para proyecto {}: {}", id, e.getMessage(), e);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al obtener estadísticas");
+            errorResponse.put("mensaje", e.getMessage());
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(errorResponse, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/admin/verificar-expirados")
+    public ResponseEntity<?> verificarProyectosExpirados() {
+        try {
+            logger.info("Ejecutando verificación manual de proyectos expirados...");
+            
+            // Registrar fecha actual para diagnóstico
+            LocalDateTime ahora = LocalDateTime.now();
+            logger.info("Fecha y hora actual del sistema: {}", ahora);
+            
+            // Ejecutar la verificación
+            int proyectosActualizados = proyectoServicio.verificarProyectosExpirados();
+            
+            logger.info("Verificación completada: {} proyectos actualizados", proyectosActualizados);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("mensaje", String.format("Verificación completada. %d proyectos actualizados a estado COMPLETADO", proyectosActualizados));
+            response.put("proyectosActualizados", proyectosActualizados);
+            response.put("fechaVerificacion", ahora.toString());
+            
+            // Establecer cabeceras explícitas para asegurar que se interprete como JSON
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(response, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error al verificar proyectos expirados: {}", e.getMessage(), e);
+            
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al verificar proyectos expirados");
+            errorResponse.put("mensaje", e.getMessage());
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(errorResponse, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Endpoint de diagnóstico para encontrar proyectos que deberían estar expirados
+     * pero su estado no lo refleja
+     */
+    @GetMapping("/admin/diagnostico-expirados")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> diagnosticoProyectosExpirados() {
+        try {
+            logger.info("Ejecutando diagnóstico de fechas de expiración...");
+            
+            List<Map<String, Object>> proyectosExpirados = 
+                proyectoServicio.obtenerProyectosExpiradosSinActualizar();
+            
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("fechaDiagnostico", LocalDateTime.now().toString());
+            respuesta.put("cantidadProyectosAfectados", proyectosExpirados.size());
+            respuesta.put("proyectos", proyectosExpirados);
+            
+            logger.info("Diagnóstico completado. Proyectos afectados: {}", proyectosExpirados.size());
+            
+            // Establecer cabeceras explícitas para asegurar que se interprete como JSON
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(respuesta, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error en el diagnóstico de proyectos expirados: {}", e.getMessage(), e);
+            
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error en el diagnóstico de proyectos expirados");
+            errorResponse.put("mensaje", e.getMessage());
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(errorResponse, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Endpoint para forzar la verificación de expiración de un proyecto específico
+     * Útil para actualizar inmediatamente el estado de un proyecto cuando su fecha ha expirado
+     */
+    @GetMapping("/actualizar-estado/{id}")
+    public ResponseEntity<?> actualizarEstadoProyecto(@PathVariable String id) {
+        try {
+            logger.info("Actualizando estado del proyecto {}", id);
+            
+            Optional<Proyecto> proyectoOpt = proyectoServicio.obtenerProyectoPorId(id);
+            if (proyectoOpt.isEmpty()) {
+                logger.warn("Proyecto con ID {} no encontrado", id);
+                
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Proyecto no encontrado");
+                
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("Content-Type", "application/json; charset=UTF-8");
+                
+                return new ResponseEntity<>(errorResponse, headers, HttpStatus.NOT_FOUND);
+            }
+            
+            Proyecto proyecto = proyectoOpt.get();
+            LocalDateTime ahora = LocalDateTime.now();
+            
+            // Verificar si hay que actualizar el estado
+            boolean actualizado = false;
+            String mensajeResultado = "No se requiere actualización de estado";
+            
+            if (proyecto.getFechaExpiracion() != null && proyecto.getFechaExpiracion().isBefore(ahora)) {
+                // Si ha expirado y no está marcado como completado
+                if (proyecto.getEstado() != Proyecto.EstadoProyecto.COMPLETADO) {
+                    logger.info("Proyecto {} ha expirado. Actualizando estado a COMPLETADO", id);
+                    proyecto.setEstado(Proyecto.EstadoProyecto.COMPLETADO);
+                    proyectoServicio.actualizarProyecto(proyecto);
+                    actualizado = true;
+                    mensajeResultado = "Proyecto actualizado a estado COMPLETADO";
+                } else {
+                    mensajeResultado = "El proyecto ya está en estado COMPLETADO";
+                }
+            } else if (proyecto.haAlcanzadoLimiteParticipantes() && 
+                       proyecto.getEstado() != Proyecto.EstadoProyecto.COMPLETO) {
+                proyecto.setEstado(Proyecto.EstadoProyecto.COMPLETO);
+                proyectoServicio.actualizarProyecto(proyecto);
+                actualizado = true;
+                mensajeResultado = "Proyecto actualizado a estado COMPLETO por límite de participantes";
+            }
+            
+            // Limpiar caché para este proyecto
+            String cacheKey = "proyecto:" + id;
+            cacheServicio.eliminar(cacheKey);
+            
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("actualizado", actualizado);
+            respuesta.put("mensaje", mensajeResultado);
+            respuesta.put("estadoActual", proyecto.getEstado());
+            respuesta.put("id", proyecto.getId());
+            respuesta.put("nombre", proyecto.getNombre());
+            respuesta.put("fechaVerificacion", ahora.toString());
+            
+            logger.info("Verificación de estado completada para proyecto {}: {}", id, mensajeResultado);
+            
+            // Establecer cabeceras explícitas para asegurar que se interprete como JSON
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(respuesta, headers, HttpStatus.OK);
+            
+        } catch (Exception e) {
+            logger.error("Error al actualizar estado del proyecto {}: {}", id, e.getMessage(), e);
+            
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al actualizar estado del proyecto");
+            errorResponse.put("mensaje", e.getMessage());
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Type", "application/json; charset=UTF-8");
+            
+            return new ResponseEntity<>(errorResponse, headers, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 } 

@@ -3,7 +3,6 @@ package com.Impulso.Alcambio.Modelo;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -23,6 +22,14 @@ public class Desafio {
     private List<CriterioComplecion> criterios = new ArrayList<>();
     private boolean completado;
 
+    // Constantes para el tipo de condición de completitud
+    public static final String CONDICION_PARTICIPAR_PROYECTO = "PARTICIPAR_PROYECTO";
+    public static final String CONDICION_COMENTAR_FORO = "COMENTAR_FORO";
+    public static final String CONDICION_ACCION_GENERICA = "ACCION_GENERICA"; // Por defecto, o para completitud manual/otras lógicas
+
+    private String tipoCondicionCompletitud; // Define cómo se completa el desafío (usa las constantes de arriba)
+    private String objetivoId;               // ID del proyecto o foro objetivo, según tipoCondicionCompletitud
+
     public enum TipoDesafio {
         INDIVIDUAL, GRUPAL, COMPETITIVO
     }
@@ -30,6 +37,7 @@ public class Desafio {
     public Desafio() {
         this.fechaInicio = LocalDateTime.now();
         this.completado = false;
+        this.tipoCondicionCompletitud = CONDICION_ACCION_GENERICA; // Valor por defecto
     }
 
     public Desafio(String proyectoId, String nombre, String descripcion, TipoDesafio tipo) {
@@ -38,6 +46,18 @@ public class Desafio {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.tipo = tipo;
+    }
+
+    public Desafio(String nombre, String descripcion, TipoDesafio tipo, int puntosRecompensa, 
+                   String tipoCondicionCompletitud, String objetivoId, String proyectoAsociadoId) {
+        this();
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.tipo = tipo;
+        this.puntosRecompensa = puntosRecompensa;
+        setTipoCondicionCompletitud(tipoCondicionCompletitud);
+        this.objetivoId = objetivoId;
+        this.proyectoId = proyectoAsociadoId;
     }
 
     public static class CriterioComplecion {
@@ -172,6 +192,28 @@ public class Desafio {
     
     public void setCompletado(boolean completado) {
         this.completado = completado;
+    }
+
+    public String getTipoCondicionCompletitud() {
+        return tipoCondicionCompletitud;
+    }
+
+    public void setTipoCondicionCompletitud(String tipoCondicionCompletitud) {
+        if (CONDICION_PARTICIPAR_PROYECTO.equals(tipoCondicionCompletitud) ||
+            CONDICION_COMENTAR_FORO.equals(tipoCondicionCompletitud) ||
+            CONDICION_ACCION_GENERICA.equals(tipoCondicionCompletitud)) {
+            this.tipoCondicionCompletitud = tipoCondicionCompletitud;
+        } else {
+            this.tipoCondicionCompletitud = CONDICION_ACCION_GENERICA;
+        }
+    }
+
+    public String getObjetivoId() {
+        return objetivoId;
+    }
+
+    public void setObjetivoId(String objetivoId) {
+        this.objetivoId = objetivoId;
     }
 
     // Métodos de utilidad

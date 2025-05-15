@@ -79,8 +79,22 @@ public class Proyecto {
 
     public boolean isActivo() {
         return estado == EstadoProyecto.ACTIVO && 
-               (fechaExpiracion == null || fechaExpiracion.isAfter(LocalDateTime.now())) &&
+               !haExpirado() &&
                !haAlcanzadoLimiteParticipantes();
+    }
+    
+    /**
+     * Verifica si el proyecto ha expirado basado en su fecha de expiración
+     * La verificación se realiza comparando la fecha de expiración con la fecha actual
+     * Un proyecto ha expirado si su fecha de expiración es anterior a la fecha actual
+     * 
+     * @return true si el proyecto tiene fecha de expiración y ésta es anterior a la fecha actual
+     */
+    public boolean haExpirado() {
+        LocalDateTime ahora = LocalDateTime.now();
+        // Verificar si la fecha de expiración existe y es anterior a la fecha actual
+        return fechaExpiracion != null && 
+               fechaExpiracion.isBefore(ahora);
     }
     
     /**

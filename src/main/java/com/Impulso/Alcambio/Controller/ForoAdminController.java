@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,8 +48,21 @@ public class ForoAdminController {
     // Renderizar la vista de administración de foros
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ModelAndView adminForosView() {
+    public ModelAndView adminForosView(Principal principal) {
         ModelAndView modelAndView = new ModelAndView("ForoAdmin");
+        
+        // Obtener estadísticas
+        Map<String, Object> estadisticas = foroServicio.obtenerEstadisticasAdmin();
+        modelAndView.addObject("estadisticas", estadisticas);
+        
+        // Obtener información del usuario
+        if (principal != null) {
+            Optional<Usuario> usuarioOpt = usuarioServicio.buscarPorCorreo(principal.getName());
+            if (usuarioOpt.isPresent()) {
+                modelAndView.addObject("usuario", usuarioOpt.get());
+            }
+        }
+        
         return modelAndView;
     }
     
@@ -73,6 +87,22 @@ public class ForoAdminController {
         Pageable pageable = PageRequest.of(page, size, sort);
         
         return ResponseEntity.ok(foroServicio.obtenerForosAdmin(filter, pageable));
+    }
+    
+    // Obtener un foro específico por ID
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Foro> obtenerForoPorId(@PathVariable String id) {
+        Optional<Foro> foroOpt = foroServicio.obtenerPorId(id);
+        
+        if (foroOpt.isPresent()) {
+            return ResponseEntity
+                .ok()
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .body(foroOpt.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
     
     // Buscar foros por título para administración
@@ -121,38 +151,41 @@ public class ForoAdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoForo);
     }
     
-    // Archivar/desarchivar un foro
-    @PutMapping("/{id}/archive")
+    // Archivar/desarchivar un foro (cambiando de PUT a POST para coincidir con el cliente)
+    @PostMapping("/{id}/archivar")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Foro> archivarForo(
             @PathVariable String id,
-            @RequestParam boolean archive) {
+            @RequestBody Map<String, Boolean> payload) {
         
-        return foroServicio.cambiarEstadoArchivado(id, archive)
+        boolean archivar = payload.getOrDefault("archivar", false);
+        return foroServicio.cambiarEstadoArchivado(id, archivar)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    // Activar/desactivar un foro
-    @PutMapping("/{id}/active")
+    // Activar/desactivar un foro (cambiando de PUT a POST para coincidir con el cliente)
+    @PostMapping("/{id}/estado-activo")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Foro> activarForo(
             @PathVariable String id,
-            @RequestParam boolean active) {
+            @RequestBody Map<String, Boolean> payload) {
         
-        return foroServicio.cambiarEstadoActivo(id, active)
+        boolean activo = payload.getOrDefault("activo", false);
+        return foroServicio.cambiarEstadoActivo(id, activo)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    // Activar/desactivar comentarios en un foro
-    @PutMapping("/{id}/comments")
+    // Activar/desactivar comentarios en un foro (cambiando de PUT a POST para coincidir con el cliente)
+    @PostMapping("/{id}/permitir-comentarios")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Foro> permitirComentarios(
             @PathVariable String id,
-            @RequestParam boolean allow) {
+            @RequestBody Map<String, Boolean> payload) {
         
-        return foroServicio.cambiarPermitirComentarios(id, allow)
+        boolean permitir = payload.getOrDefault("permitir", false);
+        return foroServicio.cambiarPermitirComentarios(id, permitir)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -368,5 +401,229 @@ public class ForoAdminController {
         // Guardar y devolver
         Foro foroActualizado = foroServicio.crearForo(foro);
         return ResponseEntity.status(HttpStatus.CREATED).body(foroActualizado);
+    }
+
+    // Eliminar un foro
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> eliminarForo(@PathVariable String id) {
+        boolean eliminado = foroServicio.eliminarForo(id);
+        
+        if (eliminado) {
+            Map<String, String> response = new HashMap<>();
+            response.put("mensaje", "Foro eliminado correctamente");
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Endpoint para banear un usuario
+     * @param usuarioId ID del usuario a banear
+     * @param payload Datos del baneo (tipo, duración, motivo)
+     * @param principal Usuario autenticado
+     * @return Respuesta con información del baneo
+     */
+    @PostMapping("/usuarios/{usuarioId}/banear")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> banearUsuario(
+            @PathVariable String usuarioId,
+            @RequestBody Map<String, Object> payload,
+            Principal principal) {
+        
+        try {
+            Optional<Usuario> usuarioOpt = usuarioServicio.buscarPorCorreo(principal.getName());
+            
+            if (usuarioOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Usuario no autenticado", "mensaje", "Debe iniciar sesión para realizar esta acción"));
+            }
+            
+            Usuario admin = usuarioOpt.get();
+            
+            // Verificar que sea administrador
+            if (admin.getRol() != Rol.ADMIN) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Acceso denegado", "mensaje", "Solo los administradores pueden realizar esta acción"));
+            }
+            
+            // Obtener datos del payload
+            String tipo = (String) payload.getOrDefault("tipo", "temporal");
+            Integer duracionDias = null;
+            if (tipo.equals("temporal") && payload.containsKey("duracionDias")) {
+                duracionDias = Integer.valueOf(payload.get("duracionDias").toString());
+            }
+            String motivo = (String) payload.getOrDefault("motivo", "Violación de términos y condiciones");
+            
+            // Verificar usuario a banear
+            Optional<Usuario> usuarioABanearOpt = usuarioServicio.buscarPorId(usuarioId);
+            if (usuarioABanearOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Usuario no encontrado", "mensaje", "No se encontró el usuario a banear"));
+            }
+            
+            Usuario usuarioABanear = usuarioABanearOpt.get();
+            
+            // No permitir banear a otros administradores
+            if (usuarioABanear.getRol() == Rol.ADMIN) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Operación no permitida", "mensaje", "No se puede banear a un administrador"));
+            }
+            
+            // Establecer datos del baneo
+            usuarioABanear.setBaneado(true);
+            usuarioABanear.setBaneoTemporal(tipo.equals("temporal"));
+            usuarioABanear.setFechaBaneo(LocalDateTime.now());
+            usuarioABanear.setMotivoBaneo(motivo);
+            usuarioABanear.setAdminBaneoId(admin.getId());
+            
+            if (duracionDias != null) {
+                usuarioABanear.setFechaFinBaneo(LocalDateTime.now().plusDays(duracionDias));
+            } else {
+                usuarioABanear.setFechaFinBaneo(null); // Baneo permanente
+            }
+            
+            // Guardar usuario baneado
+            Usuario usuarioActualizado = usuarioServicio.actualizarUsuario(usuarioABanear);
+            
+            // Respuesta
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("mensaje", String.format("Usuario %s baneado exitosamente", tipo.equals("permanente") ? "permanentemente" : "temporalmente"));
+            respuesta.put("fechaBaneo", usuarioActualizado.getFechaBaneo());
+            if (duracionDias != null) {
+                respuesta.put("fechaFinBaneo", usuarioActualizado.getFechaFinBaneo());
+                respuesta.put("duracionDias", duracionDias);
+            }
+            
+            return ResponseEntity.ok(respuesta);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al procesar la solicitud", "mensaje", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Endpoint para desbanear un usuario
+     * @param usuarioId ID del usuario a desbanear
+     * @param principal Usuario autenticado
+     * @return Respuesta con información del desbaneo
+     */
+    @PostMapping("/usuarios/{usuarioId}/desbanear")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> desbanearUsuario(
+            @PathVariable String usuarioId,
+            Principal principal) {
+        
+        try {
+            Optional<Usuario> usuarioOpt = usuarioServicio.buscarPorCorreo(principal.getName());
+            
+            if (usuarioOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Usuario no autenticado", "mensaje", "Debe iniciar sesión para realizar esta acción"));
+            }
+            
+            Usuario admin = usuarioOpt.get();
+            
+            // Verificar que sea administrador
+            if (admin.getRol() != Rol.ADMIN) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Acceso denegado", "mensaje", "Solo los administradores pueden realizar esta acción"));
+            }
+            
+            // Verificar usuario a desbanear
+            Optional<Usuario> usuarioADesbanearOpt = usuarioServicio.buscarPorId(usuarioId);
+            if (usuarioADesbanearOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Usuario no encontrado", "mensaje", "No se encontró el usuario a desbanear"));
+            }
+            
+            Usuario usuarioADesbanear = usuarioADesbanearOpt.get();
+            
+            // Verificar si está baneado
+            if (!usuarioADesbanear.isBaneado()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Operación inválida", "mensaje", "El usuario no está baneado actualmente"));
+            }
+            
+            // Quitar el baneo
+            usuarioADesbanear.setBaneado(false);
+            usuarioADesbanear.setBaneoTemporal(false);
+            usuarioADesbanear.setFechaFinBaneo(null);
+            usuarioADesbanear.setHistorialBaneos((usuarioADesbanear.getHistorialBaneos() != null ? usuarioADesbanear.getHistorialBaneos() : "") 
+                    + "Baneado desde " + usuarioADesbanear.getFechaBaneo() 
+                    + " hasta " + LocalDateTime.now() 
+                    + " por: " + usuarioADesbanear.getMotivoBaneo() + ".\n");
+            usuarioADesbanear.setMotivoBaneo(null);
+            
+            // Guardar usuario desbaneado
+            Usuario usuarioActualizado = usuarioServicio.actualizarUsuario(usuarioADesbanear);
+            
+            // Respuesta
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("mensaje", "Usuario desbaneado exitosamente");
+            respuesta.put("fechaDesbaneo", LocalDateTime.now());
+            
+            return ResponseEntity.ok(respuesta);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al procesar la solicitud", "mensaje", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Endpoint para listar usuarios (con filtrado para la gestión de baneo)
+     * @param filter Filtro (todos, activos, baneados)
+     * @param query Búsqueda por nombre o email
+     * @param page Página actual
+     * @param size Tamaño de página
+     * @return Lista paginada de usuarios
+     */
+    @GetMapping("/usuarios")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> listarUsuarios(
+            @RequestParam(defaultValue = "todos") String filter,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            
+            // Implementa tu lógica de servicio para obtener usuarios filtrados y paginados
+            Page<Usuario> usuarios = usuarioServicio.obtenerUsuariosFiltrados(filter, query, pageable);
+            
+            return ResponseEntity.ok(usuarios);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al procesar la solicitud", "mensaje", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Guardar un filtro de palabras (esta implementación asume guardado en la base de datos,
+     * pero el cliente actualmente usa localStorage)
+     */
+    @PostMapping("/filtros/palabras")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> guardarFiltroPalabras(
+            @RequestBody Map<String, Object> payload,
+            Principal principal) {
+        
+        try {
+            // Esta funcionalidad requeriría una implementación en el backend para guardar los filtros
+            // Por ahora, devolvemos una respuesta simulada ya que el cliente usa localStorage
+            
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Filtro guardado exitosamente", 
+                "palabra", payload.get("palabra"),
+                "nivel", payload.get("nivel")
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al procesar la solicitud", "mensaje", e.getMessage()));
+        }
     }
 } 

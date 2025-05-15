@@ -284,30 +284,62 @@ public class DesafioController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> completarDesafio(@PathVariable String id, Principal principal) {
         try {
+            // Verificar si hay principal (usuario autenticado)
+            if (principal == null) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "No hay usuario autenticado");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).contentType(MediaType.APPLICATION_JSON).body(error);
+            }
+            
             // Obtener usuario actual
             Optional<Usuario> usuarioOpt = obtenerUsuarioAutenticado(principal);
             if (usuarioOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Usuario no encontrado en la base de datos");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).contentType(MediaType.APPLICATION_JSON).body(error);
             }
             
             Usuario usuario = usuarioOpt.get();
             
-            // Verificar y completar el desafío
-            ParticipacionDesafio participacionCompletada = 
-                participacionDesafioServicio.validarYCompletarDesafio(usuario.getId(), id);
-            
-            // Obtener el desafío para acceder a los puntos
+            // Verificar si el desafío existe
             Optional<Desafio> desafioOpt = desafioServicio.obtenerPorId(id);
             if (desafioOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                       .body("Desafío no encontrado tras completarlo");
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "El desafío no existe");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON).body(error);
             }
             
-            return construirRespuestaParticipacion(participacionCompletada, usuario, desafioOpt.get());
-            
-        } catch (RuntimeException e) {
-            // Capturar excepciones de validación
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            // Verificar y completar el desafío
+            try {
+                ParticipacionDesafio participacionCompletada = 
+                    participacionDesafioServicio.validarYCompletarDesafio(usuario.getId(), id);
+                
+                // Obtener el desafío para acceder a los puntos
+                Desafio desafio = desafioOpt.get();
+                
+                // Construir respuesta
+                Map<String, Object> respuesta = new HashMap<>();
+                respuesta.put("mensaje", "¡Desafío completado exitosamente!");
+                respuesta.put("participacion", participacionCompletada);
+                respuesta.put("puntosOtorgados", desafio.getPuntosRecompensa());
+                
+                // Calcular puntos totales usando el servicio de participación
+                int puntosActuales = participacionDesafioServicio.calcularPuntosTotales(usuario.getId());
+                respuesta.put("puntosActuales", puntosActuales);
+                
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(respuesta);
+            } catch (RuntimeException e) {
+                // Capturar excepciones de validación
+                Map<String, String> error = new HashMap<>();
+                error.put("error", e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(error);
+            }
+        } catch (Exception e) {
+            // Cualquier otra excepción no controlada
+            log.error("Error al completar desafío", e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).contentType(MediaType.APPLICATION_JSON).body(error);
         }
     }
     
@@ -396,8 +428,20 @@ public class DesafioController {
      * Obtiene los desafíos activos (fecha fin posterior a la actual)
      */
     @GetMapping("/activos")
-    public ResponseEntity<List<Desafio>> obtenerActivos() {
-        return ResponseEntity.ok(desafioServicio.obtenerDesafiosActivos());
+    public ResponseEntity<?> obtenerActivos() {
+        try {
+            List<Desafio> desafiosActivos = desafioServicio.obtenerDesafiosActivos();
+            return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(desafiosActivos);
+        } catch (Exception e) {
+            log.error("Error al obtener desafíos activos", e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Error al obtener desafíos activos: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(error);
+        }
     }
     
     /**

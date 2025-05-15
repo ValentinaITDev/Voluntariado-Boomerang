@@ -15,6 +15,8 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -628,6 +630,7 @@ public class Foro {
         this.esPublico = esPublico;
     }
     
+    @JsonIgnore
     public Map<String, Object> getCacheEstadisticas() {
         return cacheEstadisticas;
     }

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/PerfilUsuario.css">
+    <link rel="stylesheet" th:href="@{/PerfilUsuario.css}">
     <link rel="stylesheet" th:href="@{/Styles.css}">
     <title>Mi Perfil - Voluntario</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,7 +13,7 @@
 <body>
     <nav class="navbar">
         <div class="logo">
-            <img src="/images/logo.png" alt="Boomerang Voluntariado" class="logo-img">
+            <img th:src="@{/images/logo.png}" alt="Boomerang Voluntariado" class="logo-img">
         </div>
         <ul class="nav-links">
             <li><a th:href="@{/dashboard}"><i class="fas fa-tachometer-alt"></i>Dashboard</a></li>
@@ -29,12 +29,15 @@
             </li>
         </ul>
     </nav>
+    <button class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
 
     <div class="profile-container">
         <header class="profile-header">
             <!-- Área de foto de perfil -->
             <div class="profile-photo-container">
-                <img src="/static/img/perfiles.png" alt="Foto de perfil" class="profile-photo" id="profile-photo">
+                <img th:src="@{/img/perfiles.png}" alt="Foto de perfil" class="profile-photo" id="profile-photo">
                 <label for="profile-photo-upload" class="upload-overlay">
                     <i class="fas fa-camera"></i>
                     <span>Cambiar foto</span>
@@ -211,6 +214,7 @@
     </div>
 
     <script th:src="@{/js/Perfil.js}" defer></script>
+    <script th:src="@{/js/menu.js}" defer></script>
 </body>
 
 </html>

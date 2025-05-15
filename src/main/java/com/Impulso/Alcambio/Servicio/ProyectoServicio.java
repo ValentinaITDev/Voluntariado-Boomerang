@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.function.Predicate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -61,44 +64,144 @@ public class ProyectoServicio {
      */
     public List<Proyecto> obtenerTodos() {
         List<Proyecto> proyectos = proyectoRepositorio.findAll();
+        log.info("Obteniendo todos los proyectos: {} encontrados", proyectos.size());
         
-        // Actualizar estados de los proyectos según su fecha de expiración
+        // Verificar fechas de expiración y actualizar estados manualmente
         LocalDateTime ahora = LocalDateTime.now();
-        List<Proyecto> proyectosActualizados = proyectos.stream()
-            .filter(proyecto -> actualizarEstadoProyectoSiExpirado(proyecto, ahora))
-            .collect(Collectors.toList());
+        List<Proyecto> proyectosParaActualizar = new ArrayList<>();
         
-        // Si hubo actualizaciones, guardarlas en la base de datos
-        if (!proyectosActualizados.isEmpty()) {
-            proyectoRepositorio.saveAll(proyectosActualizados);
+        for (Proyecto proyecto : proyectos) {
+            if (proyecto.getFechaExpiracion() != null && 
+                proyecto.getFechaExpiracion().isBefore(ahora) && 
+                proyecto.getEstado() != EstadoProyecto.COMPLETADO) {
+                
+                log.info("Proyecto {} ({}) tiene fecha de expiración pasada. Cambiando estado a COMPLETADO.", 
+                    proyecto.getId(), proyecto.getNombre());
+                proyecto.setEstado(EstadoProyecto.COMPLETADO);
+                proyectosParaActualizar.add(proyecto);
+            }
+        }
+        
+        // Guardar cambios en base de datos si hay proyectos para actualizar
+        if (!proyectosParaActualizar.isEmpty()) {
+            log.info("Actualizando {} proyectos con fechas vencidas", proyectosParaActualizar.size());
+            proyectoRepositorio.saveAll(proyectosParaActualizar);
+            
+            // Limpiar caché para estos proyectos
+            for (Proyecto p : proyectosParaActualizar) {
+                String cacheKey = "proyecto:" + p.getId();
+                cacheServicio.eliminar(cacheKey);
+            }
         }
         
         return proyectos;
     }
     
     /**
-     * Actualiza el estado de un proyecto a EXPIRADO si su fecha de expiración ha pasado
+     * Verifica y actualiza el estado de una lista de proyectos
+     * @param proyectos Lista de proyectos a verificar
+     */
+    private void verificarYActualizarEstadosProyectos(List<Proyecto> proyectos) {
+        LocalDateTime ahora = LocalDateTime.now();
+        List<Proyecto> proyectosActualizados = new ArrayList<>();
+        
+        for (Proyecto proyecto : proyectos) {
+            if (actualizarEstadoProyectoSiExpirado(proyecto, ahora)) {
+                proyectosActualizados.add(proyecto);
+            }
+        }
+        
+        // Si hubo actualizaciones, guardarlas en la base de datos
+        if (!proyectosActualizados.isEmpty()) {
+            log.info("Actualizando estado de {} proyectos expirados", proyectosActualizados.size());
+            proyectoRepositorio.saveAll(proyectosActualizados);
+        }
+    }
+    
+    /**
+     * Verifica manualmente todos los proyectos activos para actualizar su estado
+     * @return Número de proyectos actualizados
+     */
+    @Transactional
+    public int verificarProyectosExpirados() {
+        log.info("Verificando proyectos con fecha cumplida...");
+        
+        // Obtener todos los proyectos para una revisión completa
+        List<Proyecto> todosProyectos = proyectoRepositorio.findAll();
+        log.info("Total de proyectos encontrados: {}", todosProyectos.size());
+        
+        LocalDateTime ahora = LocalDateTime.now();
+        log.info("Fecha actual para verificación: {}", ahora);
+        
+        List<Proyecto> proyectosActualizados = new ArrayList<>();
+        
+        for (Proyecto proyecto : todosProyectos) {
+            if (proyecto.getFechaExpiracion() != null) {
+                log.info("Revisando proyecto ID: {}, Nombre: {}, Estado: {}, Fecha expiración: {}", 
+                    proyecto.getId(), proyecto.getNombre(), proyecto.getEstado(), proyecto.getFechaExpiracion());
+                
+                // Si la fecha de expiración es pasada y el estado no es COMPLETADO, actualizar
+                if (proyecto.getFechaExpiracion().isBefore(ahora) && 
+                    proyecto.getEstado() != EstadoProyecto.COMPLETADO) {
+                    
+                    log.info("Marcando proyecto como COMPLETADO por fecha expirada: {}", proyecto.getId());
+                    proyecto.setEstado(EstadoProyecto.COMPLETADO);
+                    proyectosActualizados.add(proyecto);
+                    
+                    // Limpiar proyecto de caché
+                    String cacheKey = "proyecto:" + proyecto.getId();
+                    cacheServicio.eliminar(cacheKey);
+                }
+            }
+        }
+        
+        // Si hubo actualizaciones, guardarlas en la base de datos
+        if (!proyectosActualizados.isEmpty()) {
+            log.info("Actualizando estado de {} proyectos a completados", proyectosActualizados.size());
+            proyectoRepositorio.saveAll(proyectosActualizados);
+            
+            // Limpiar todas las cachés para forzar refrescos
+            cacheServicio.eliminarPorPatron("proyecto:*");
+            cacheServicio.eliminarPorPatron("dashboard:*");
+            cacheServicio.eliminarPorPatron("desafios:*");
+        } else {
+            log.info("No se encontraron proyectos para actualizar");
+        }
+        
+        return proyectosActualizados.size();
+    }
+
+    /**
+     * Actualiza el estado de un proyecto a COMPLETADO si su fecha de expiración ha pasado
      * o a COMPLETO si se ha alcanzado el límite de participantes
      * @param proyecto El proyecto a verificar
      * @param ahora Fecha actual (para evitar múltiples llamadas a LocalDateTime.now())
      * @return true si el estado del proyecto fue actualizado, false en caso contrario
      */
     private boolean actualizarEstadoProyectoSiExpirado(Proyecto proyecto, LocalDateTime ahora) {
-        // Solo verificar proyectos activos
-        if (proyecto.getEstado() == EstadoProyecto.ACTIVO) {
-            // Si tiene fecha de expiración y ya pasó
-            if (proyecto.getFechaExpiracion() != null && proyecto.getFechaExpiracion().isBefore(ahora)) {
-                proyecto.setEstado(EstadoProyecto.EXPIRADO);
-                return true;
+        boolean actualizado = false;
+        
+        // Verificar siempre la expiración independientemente del estado actual
+        if (proyecto.getFechaExpiracion() != null && proyecto.getFechaExpiracion().isBefore(ahora)) {
+            log.info("Proyecto {} completado por fecha. Fecha expiración: {}, Fecha actual: {}", 
+                proyecto.getId(), proyecto.getFechaExpiracion(), ahora);
+            if (proyecto.getEstado() != EstadoProyecto.COMPLETADO) {
+                proyecto.setEstado(EstadoProyecto.COMPLETADO);
+                actualizado = true;
             }
-            
-            // Si se alcanzó el límite de participantes
+            return actualizado;
+        }
+        
+        // Solo verificar límite de participantes si está activo y no expirado
+        if (proyecto.getEstado() == EstadoProyecto.ACTIVO) {
             if (proyecto.haAlcanzadoLimiteParticipantes()) {
+                log.info("Proyecto {} completo por límite de participantes", proyecto.getId());
                 proyecto.setEstado(EstadoProyecto.COMPLETO);
-                return true;
+                actualizado = true;
             }
         }
-        return false;
+        
+        return actualizado;
     }
 // CREAR PROYECTO
     /**
@@ -200,34 +303,83 @@ public class ProyectoServicio {
      * @return Optional con el proyecto si existe, empty si no existe
      */
     public Optional<Proyecto> obtenerProyectoPorId(String id) {
-        // Generar clave de caché
-        String cacheKey = "proyecto:" + id;
-        
-        // Intentar obtener de caché primero
-        Object cachedProyecto = cacheServicio.obtener(cacheKey);
-        if (cachedProyecto != null) {
-            log.info("Proyecto recuperado de caché: {}", id);
-            return Optional.of((Proyecto) cachedProyecto);
-        }
-        
-        // Si no está en caché, buscar en BD
-        Optional<Proyecto> proyectoOpt = proyectoRepositorio.findById(id);
-        
-        // Si el proyecto existe, verificar si ha expirado
-        proyectoOpt = proyectoOpt.map(proyecto -> {
-            if (actualizarEstadoProyectoSiExpirado(proyecto, LocalDateTime.now())) {
-                return proyectoRepositorio.save(proyecto);
+        try {
+            // Validar que el ID no sea nulo o vacío
+            if (id == null || id.trim().isEmpty()) {
+                log.warn("Se intentó obtener un proyecto con ID nulo o vacío");
+                return Optional.empty();
             }
-            return proyecto;
-        });
-        
-        // Si se encuentra, guardar en caché para futuras consultas (15 minutos)
-        proyectoOpt.ifPresent(proyecto -> {
-            log.info("Guardando proyecto en caché: {}", id);
-            cacheServicio.guardarConExpiracion(cacheKey, proyecto, 15, java.util.concurrent.TimeUnit.MINUTES);
-        });
-        
-        return proyectoOpt;
+            
+            // Intentar obtener proyecto de caché
+            String cacheKey = "proyecto:" + id;
+            Object cachedObject = cacheServicio.obtener(cacheKey);
+            
+            Proyecto proyectoCached = null;
+            // Verificar si el objeto en caché es un Proyecto o un Map y convertirlo de forma segura
+            if (cachedObject != null) {
+                if (cachedObject instanceof Proyecto) {
+                    proyectoCached = (Proyecto) cachedObject;
+                    log.debug("Proyecto {} obtenido de caché (instancia Proyecto)", id);
+                } else if (cachedObject instanceof Map) {
+                    // Si es un Map, hay que buscar de nuevo en la base de datos
+                    log.debug("Objeto en caché para {} es un Map, eliminando de caché", id);
+                    cacheServicio.eliminar(cacheKey);
+                } else {
+                    log.warn("Objeto en caché para {} es de tipo inesperado: {}", id, cachedObject.getClass().getName());
+                    cacheServicio.eliminar(cacheKey);
+                }
+            }
+            
+            if (proyectoCached != null) {
+                // Verificar si el proyecto está expirado y actualizar si es necesario
+                if (proyectoCached.getFechaExpiracion() != null && 
+                    proyectoCached.getFechaExpiracion().isBefore(LocalDateTime.now()) &&
+                    proyectoCached.getEstado() != EstadoProyecto.COMPLETADO) {
+                    
+                    // Actualizar estado en caché temporalmente
+                    proyectoCached.setEstado(EstadoProyecto.COMPLETADO);
+                    cacheServicio.guardarConExpiracion(cacheKey, proyectoCached, 60, TimeUnit.MINUTES);
+                    
+                    // Actualizar en base de datos en segundo plano
+                    proyectoRepositorio.findById(id).ifPresent(p -> {
+                        p.setEstado(EstadoProyecto.COMPLETADO);
+                        proyectoRepositorio.save(p);
+                    });
+                }
+                
+                return Optional.of(proyectoCached);
+            }
+            
+            // Si no está en caché o hubo problemas, obtener de la base de datos
+            Optional<Proyecto> proyectoOpt = proyectoRepositorio.findById(id);
+            
+            // Si se encontró, guardarlo en caché y verificar fechas
+            if (proyectoOpt.isPresent()) {
+                Proyecto proyecto = proyectoOpt.get();
+                
+                // Verificar si está expirado
+                if (proyecto.getFechaExpiracion() != null && 
+                    proyecto.getFechaExpiracion().isBefore(LocalDateTime.now()) &&
+                    proyecto.getEstado() != EstadoProyecto.COMPLETADO) {
+                    
+                    proyecto.setEstado(EstadoProyecto.COMPLETADO);
+                    proyectoRepositorio.save(proyecto);
+                }
+                
+                // Guardar en caché
+                try {
+                    cacheServicio.guardarConExpiracion(cacheKey, proyecto, 60, TimeUnit.MINUTES);
+                } catch (Exception e) {
+                    log.error("Error al guardar proyecto {} en caché: {}", id, e.getMessage());
+                    // Continuar sin guardar en caché
+                }
+            }
+            
+            return proyectoOpt;
+        } catch (Exception e) {
+            log.error("Error al obtener proyecto con ID {}: {}", id, e.getMessage(), e);
+            return Optional.empty();
+        }
     }
 // BUSCAR PROYECTOS POR NOMBRE
     /**
@@ -559,11 +711,12 @@ public class ProyectoServicio {
      * @return Página de proyectos
      */
     public Page<Proyecto> obtenerTodosPaginados(Pageable pageable) {
-        Page<Proyecto> proyectosPaginados = proyectoRepositorio.findAll(pageable);
+        // Obtener todos los proyectos primero
+        List<Proyecto> todosProyectos = proyectoRepositorio.findAll();
         
         // Actualizar estados de los proyectos según su fecha de expiración
         LocalDateTime ahora = LocalDateTime.now();
-        List<Proyecto> proyectosActualizados = proyectosPaginados.getContent().stream()
+        List<Proyecto> proyectosActualizados = todosProyectos.stream()
             .filter(proyecto -> actualizarEstadoProyectoSiExpirado(proyecto, ahora))
             .collect(Collectors.toList());
         
@@ -572,7 +725,28 @@ public class ProyectoServicio {
             proyectoRepositorio.saveAll(proyectosActualizados);
         }
         
-        return proyectosPaginados;
+        // Ordenar la lista por fecha de creación, del más reciente al más antiguo
+        List<Proyecto> proyectosOrdenados = todosProyectos.stream()
+            .sorted((p1, p2) -> {
+                // Si alguno tiene fecha nula, ponerlo al final
+                if (p1.getFechaCreacion() == null) return 1;
+                if (p2.getFechaCreacion() == null) return -1;
+                // Orden descendente (más reciente primero)
+                return p2.getFechaCreacion().compareTo(p1.getFechaCreacion());
+            })
+            .collect(Collectors.toList());
+        
+        // Implementar paginación manual
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), proyectosOrdenados.size());
+        
+        // Verificar que los índices sean válidos
+        if (start > proyectosOrdenados.size()) {
+            return Page.empty(pageable);
+        }
+        
+        List<Proyecto> proyectosPaginados = proyectosOrdenados.subList(start, end);
+        return new PageImpl<>(proyectosPaginados, pageable, proyectosOrdenados.size());
     }
 
     /**
@@ -596,5 +770,32 @@ public class ProyectoServicio {
         
         List<Proyecto> proyectosPaginados = proyectos.subList(start, end);
         return new PageImpl<>(proyectosPaginados, pageable, proyectos.size());
+    }
+
+    /**
+     * Obtiene una lista de proyectos que deberían estar expirados pero su estado no lo refleja
+     * Esta función es útil para diagnóstico y no modifica la base de datos
+     * @return Lista de proyectos que están expirados pero aún figuran como activos
+     */
+    public List<Map<String, Object>> obtenerProyectosExpiradosSinActualizar() {
+        log.info("Buscando proyectos que deberían estar expirados pero siguen activos...");
+        
+        List<Proyecto> proyectosActivos = proyectoRepositorio.findByEstado(EstadoProyecto.ACTIVO);
+        LocalDateTime ahora = LocalDateTime.now();
+        
+        return proyectosActivos.stream()
+            .filter(p -> p.getFechaExpiracion() != null)
+            .filter(p -> p.getFechaExpiracion().isBefore(ahora))
+            .map(p -> {
+                Map<String, Object> info = new HashMap<>();
+                info.put("id", p.getId());
+                info.put("nombre", p.getNombre());
+                info.put("fechaExpiracion", p.getFechaExpiracion().toString());
+                info.put("horaActual", ahora.toString());
+                info.put("diferenciaHoras", 
+                    java.time.Duration.between(p.getFechaExpiracion(), ahora).toHours());
+                return info;
+            })
+            .collect(Collectors.toList());
     }
 }

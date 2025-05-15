@@ -435,6 +435,42 @@ body::after {
     backdrop-filter: blur(5px);
 }
 
+/* Estilos para el modal de detalles del proyecto */
+.project-details-modal {
+    position: relative;
+}
+
+.project-details-header {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+}
+
+.project-details-image {
+    width: 200px;
+    height: 150px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(88, 216, 255, 0.3);
+    flex-shrink: 0;
+}
+
+#modalProjectImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+#modalProjectImage:hover {
+    transform: scale(1.05);
+}
+
+.project-details-info {
+    flex: 1;
+}
+
 .project-form-modal.show, .participants-modal.show {
     opacity: 1;
     visibility: visible;
